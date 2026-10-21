@@ -5,7 +5,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const LIMITE = 0.3;
 const INTENCOES = Object.keys(DADOS);
 const NOMES = { poupar:"Poupança", cambio:"Câmbio", credito:"Crédito", orcamento:"Orçamento",
-  investir:"Investimento", saudacao:"Saudação", sobre_ngola:"Sobre a Ngola", conversa:"Conversa", outro:"Fora do assunto" };
+  investir:"Investimento", programacao:"Programação", saudacao:"Saudação", sobre_ngola:"Sobre a Ngola", conversa:"Conversa", outro:"Fora do assunto" };
+const USA_LIVROS = new Set(["programacao", "outro"]);
 const $ = id => document.getElementById(id);
 const chat = $("chat"), mensagens = $("mensagens"), vazio = $("vazio"),
       input = $("pergunta"), botao = $("enviar"), lista = $("lista"), lateral = $("lateral");
@@ -64,6 +65,29 @@ function adicionarFeedback(div, pergunta, intencao) {
   div.appendChild(barra);
 }
 
+async function guardarFicha(pergunta, a) {
+  const { error } = await supabaseClient.from("fichas").insert([{
+    pergunta, tema: a.area, texto: a.t, fonte_livro: a.livro, fonte_pagina: a.p,
+    versao: a.v || null, trecho_id: a.id || null, estado: "por_verificar", utilizador }]);
+  if (error) console.error(error);
+  return !error;
+}
+
+function adicionarFichas(div, pergunta, achados) {
+  const barra = document.createElement("div"); barra.className = "fb";
+  barra.appendChild(document.createTextNode("Guardar como ficha para verificação: "));
+  let n = 0;
+  achados.forEach((a, i) => {
+    if (a.tipo === "ficha") return;
+    n++;
+    barra.appendChild(botaoFb("📌 " + (i + 1), async () => {
+      const ok = await guardarFicha(pergunta, a);
+      barra.replaceChildren(document.createTextNode(ok ? "Ficha guardada: fica por verificar até ser aprovada ✅" : "Não consegui guardar a ficha."));
+    }));
+  });
+  if (n) div.appendChild(barra);
+}
+
 // ---------- CONVERSA ----------
 async function perguntar(texto) {
   const pergunta = (texto || input.value).trim();
@@ -73,10 +97,19 @@ async function perguntar(texto) {
 
   const { intencao, confianca } = ngola.prever(pergunta);
   const entendeu = intencao !== "outro" && confianca >= LIMITE;
-  const resposta = entendeu ? RESPOSTAS[intencao]
-    : "Ainda não percebi bem. Podes reformular? Sei falar de poupança, câmbio, crédito, orçamento e investimento.";
-  const div = adicionar("ngola", resposta, `intenção: ${intencao} · confiança: ${Math.round(confianca * 100)}%`);
-  adicionarFeedback(div, pergunta, intencao);
+  const forte = entendeu && confianca >= 0.6 && !USA_LIVROS.has(intencao);
+  const achados = forte ? [] : biblioteca.pesquisar(pergunta);
+  let resposta, div;
+  if (achados.length) {
+    resposta = biblioteca.formatar(achados);
+    div = adicionar("ngola", resposta, `📖 pesquisa na biblioteca · ${achados.length} trecho(s)`);
+    adicionarFichas(div, pergunta, achados);
+  } else {
+    resposta = entendeu ? RESPOSTAS[intencao]
+      : "Ainda não percebi bem. Podes reformular? Sei falar de poupança, câmbio, crédito, orçamento, investimento e programação.";
+    div = adicionar("ngola", resposta, `intenção: ${intencao} · confiança: ${Math.round(confianca * 100)}%`);
+    adicionarFeedback(div, pergunta, intencao);
+  }
 
   const { error } = await supabaseClient.from("memorias")
     .insert([{ pergunta, resposta, intencao, conversa_id: conversaId, utilizador }]);
@@ -125,6 +158,9 @@ input.addEventListener("input", () => { input.style.height = "auto"; input.style
 botao.onclick = () => perguntar();
 $("nova").onclick = novaConversa;
 $("menu").onclick = () => lateral.classList.toggle("aberta");
+$("fechar").onclick = () => lateral.classList.remove("aberta");
+$("fundo").onclick = () => lateral.classList.remove("aberta");
 document.querySelectorAll(".sugestoes button").forEach(b => b.onclick = () => perguntar(b.textContent));
+biblioteca.carregar().then(() => biblioteca.carregarFichas(supabaseClient));
 carregarExemplos();
 carregarLista();
