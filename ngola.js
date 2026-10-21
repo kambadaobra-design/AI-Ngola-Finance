@@ -1,13 +1,22 @@
 // Passo 1: transformar texto em lista de palavras limpas
+const STOP = new Set(["qual","quais","de","do","da","dos","das","um","uma","em",
+  "no","na","para","por","com","que","eu","me","meu","minha","se","ao","como","quanto"]);
+
+function reduzir(p) {
+  if (p.length > 4 && p.endsWith("es")) return p.slice(0, -2); // dolares -> dolar
+  if (p.length > 3 && p.endsWith("s")) return p.slice(0, -1);  // kwanzas -> kwanza
+  return p;
+}
+
 function normalizar(texto) {
   return texto
     .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // tira acentos
-    .replace(/[^a-z0-9\s]/g, " ")                      // tira pontuação
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter(p => p.length > 1);
+    .filter(p => p.length > 1 && !STOP.has(p))
+    .map(reduzir);
 }
-
 class Classificador {
   constructor() {
     this.docs = {};          // nº de frases por intenção

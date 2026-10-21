@@ -18,6 +18,11 @@ const DADOS = {
     "taxa de cambio do banco",
     "converter dolares para kz",
     "qual a diferenca entre cambio oficial e paralelo",
+        "quanto custa o dolar",
+    "preco do dolar hoje",
+    "quanto esta o euro",
+    "valor do dolar no mercado",
+    "o dolar sobe ou desce",
   ],
   credito: [
     "como pedir um emprestimo no banco",
@@ -48,6 +53,18 @@ const DADOS = {
     "o que sabes fazer",
     "ajuda",
     "oi tudo bem",
+  ],
+    outro: [
+    "qual a capital de franca",
+    "quem ganhou o jogo de futebol",
+    "receita de funge",
+    "que horas sao",
+    "como esta o tempo hoje",
+    "conta-me uma piada",
+    "quem e o presidente",
+    "como aprender ingles",
+    "quero ver um filme",
+    "como instalar o whatsapp",
   ],
 };
 
