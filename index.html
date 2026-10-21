@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
-<meta charset="UTF-8">
-<title>Ngola Finanças</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <meta charset="UTF-8">
+    <title>Ngola Finanças</title>
 </head>
 
 <body>
 
-<h1>Ngola Finanças</h1>
+    <h1>Ngola Finanças</h1>
 
-<input id="pergunta" placeholder="Faça uma pergunta">
-<button onclick="perguntar()">Enviar</button>
+    <input id="pergunta" type="text" placeholder="Faça uma pergunta">
+    <button onclick="perguntar()">Enviar</button>
 
-<div id="resposta"></div>
+    <div id="resposta"></div>
 
-<script src="app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="dados.js"></script>
+    <script src="ngola.js"></script>
+    <script src="app.js"></script>
 
 </body>
+
 </html>
