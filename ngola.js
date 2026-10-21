@@ -1,6 +1,4 @@
-// Passo 1: transformar texto em lista de palavras limpas
-const STOP = new Set(["qual","quais","de","do","da","dos","das","um","uma","em",
-  "no","na","para","por","com","que","eu","me","meu","minha","se","ao","como","quanto"]);
+const STOP = new Set(["qual","quais","de","do","da","dos","das","um","uma","em","no","na","para","por","com","que","eu","me","meu","minha","se","ao","como","quanto","quero","preciso","sabes","sao","posso","tenho","ele","ela"]);
 
 function reduzir(p) {
   if (p.length > 4 && p.endsWith("es")) return p.slice(0, -2); // dolares -> dolar
@@ -9,72 +7,45 @@ function reduzir(p) {
 }
 
 function normalizar(texto) {
-  return texto
-    .toLowerCase()
+  return texto.toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
     .filter(p => p.length > 1 && !STOP.has(p))
     .map(reduzir);
 }
-class Classificador {
-  constructor() {
-    this.docs = {};          // nº de frases por intenção
-    this.contagem = {};      // contagem[intencao][palavra]
-    this.totalPalavras = {}; // total de palavras por intenção
-    this.vocab = new Set();  // todas as palavras conhecidas
-    this.totalDocs = 0;
-  }
 
-  // TREINAR = contar
+class Classificador {
+  constructor() { this.contagem = {}; this.total = {}; this.vocab = new Set(); }
+
   treinar(intencao, frase) {
-    if (!this.docs[intencao]) {
-      this.docs[intencao] = 0;
-      this.contagem[intencao] = {};
-      this.totalPalavras[intencao] = 0;
-    }
-    this.docs[intencao]++;
-    this.totalDocs++;
+    if (!this.contagem[intencao]) { this.contagem[intencao] = {}; this.total[intencao] = 0; }
     for (const p of normalizar(frase)) {
       this.contagem[intencao][p] = (this.contagem[intencao][p] || 0) + 1;
-      this.totalPalavras[intencao]++;
+      this.total[intencao]++;
       this.vocab.add(p);
     }
   }
 
-  // PREVER = qual intenção explica melhor esta frase?
   prever(frase) {
     const palavras = normalizar(frase).filter(p => this.vocab.has(p));
-    if (palavras.length === 0) return { intencao: null, confianca: 0 };
-
+    if (palavras.length === 0) return { intencao: "outro", confianca: 0 };
     const scores = {};
-    for (const intencao in this.docs) {
-      // probabilidade inicial da intenção
-      let s = Math.log(this.docs[intencao] / this.totalDocs);
+    for (const i in this.contagem) {
+      let s = 0; // prioridades iguais: o tamanho dos grupos não pesa
       for (const p of palavras) {
-        const c = this.contagem[intencao][p] || 0;
-        s += Math.log((c + 1) / (this.totalPalavras[intencao] + this.vocab.size));
+        s += Math.log(((this.contagem[i][p] || 0) + 0.5) / (this.total[i] + 0.5 * this.vocab.size));
       }
-      scores[intencao] = s;
+      scores[i] = s;
     }
-
-    // converter scores em percentagens (softmax)
     const max = Math.max(...Object.values(scores));
-    let soma = 0;
-    const exp = {};
-    for (const i in scores) { exp[i] = Math.exp(scores[i] - max); soma += exp[i]; }
-
-    let melhor = null, melhorP = 0;
-    for (const i in exp) {
-      const p = exp[i] / soma;
-      if (p > melhorP) { melhorP = p; melhor = i; }
-    }
-    return { intencao: melhor, confianca: melhorP };
+    let soma = 0; const e = {};
+    for (const i in scores) { e[i] = Math.exp(scores[i] - max); soma += e[i]; }
+    let melhor = null, mp = 0;
+    for (const i in e) { const p = e[i] / soma; if (p > mp) { mp = p; melhor = i; } }
+    return { intencao: melhor, confianca: mp };
   }
 }
 
-// Criar a Ngola e treiná-la com os dados
 const ngola = new Classificador();
-for (const intencao in DADOS) {
-  for (const frase of DADOS[intencao]) ngola.treinar(intencao, frase);
-}
+for (const i in DADOS) for (const f of DADOS[i]) ngola.treinar(i, f);
