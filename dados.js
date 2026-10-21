@@ -4,7 +4,9 @@ const DADOS = {
   credito: ["como pedir um emprestimo no banco","quero um credito para comprar casa","quais os juros do credito","como funciona o credito pessoal","posso pedir dinheiro emprestado","preciso de financiamento para o meu negocio","o que e a taxa de juro","como pagar uma divida","preciso de um emprestimo","credito habitacao","como sair das dividas","cartao de credito"],
   orcamento: ["como fazer um orcamento mensal","como organizar o meu salario","para onde vai o meu dinheiro","controlar as minhas despesas","como dividir o salario pelas despesas","quero planear os meus gastos","regra 50 30 20","como registar as despesas do mes","como controlar gastos","controlar os gastos do mes","planear o orcamento da familia","reduzir despesas"],
   investir: ["o que sao certificados de aforro","como investir o meu dinheiro","o que sao obrigacoes do tesouro","bilhetes do tesouro vale a pena","onde investir em angola","o que e a bodiva","como comprar acoes","investimento seguro com bons juros","depositos a prazo","o que e um fundo de investimento"],
-  saudacao: ["ola","bom dia","boa tarde","boa noite","quem es tu","o que sabes fazer","ajuda","oi tudo bem","ola ngola","tudo bem","e ai","obrigado"],
+  saudacao: ["ola","bom dia","boa tarde","boa noite","o que sabes fazer","ajuda","oi tudo bem","ola ngola","tudo bem","e ai"],
+  sobre_ngola: ["quem es tu","es humana","es um robo","onde vives","quem te criou","como te chamas","tens nome","es uma pessoa","o que es tu","es inteligente","es um programa","quem te fez"],
+  conversa: ["boa ideia","muito bem","esta a crescer","boa resposta","gostei","parabens","kkkk","hahaha","que fixe","excelente","obrigada pela ajuda","estas a melhorar","obrigado","boa ngola","meu filho","que giro"],
   outro: ["qual a capital de franca","quem ganhou o jogo de futebol","receita de funge","que horas sao","como esta o tempo hoje","conta-me uma piada","quem e o presidente","como aprender ingles","quero ver um filme","como instalar o whatsapp","nao entendi","qual a tua cor favorita"],
 };
 
@@ -15,5 +17,7 @@ const RESPOSTAS = {
   orcamento: "Para o orçamento, experimenta a regra 50/30/20: 50% necessidades, 30% desejos, 20% poupança e dívidas. Regista as despesas durante um mês para veres a realidade.",
   investir: "Certificados de aforro e títulos do Tesouro são produtos em que emprestas dinheiro ao Estado em troca de juros. Compara taxa, prazo e facilidade de resgate, e confirma as condições actuais no teu banco.",
   saudacao: "Olá! Sou a Ngola. Pergunta-me sobre poupança, câmbio, crédito, orçamento ou investimento.",
+  sobre_ngola: "Sou a Ngola, uma IA pequena e simples, criada para aprender sobre finanças pessoais em Kwanzas. Não sou humana: sou código que aprende com exemplos.",
+  conversa: "Obrigada! Estou a aprender contigo. Quanto mais perguntas fizeres, melhor eu fico.",
   outro: "",
 };
