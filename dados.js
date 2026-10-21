@@ -7,6 +7,7 @@ const DADOS = {
   saudacao: ["ola","bom dia","boa tarde","boa noite","o que sabes fazer","ajuda","oi tudo bem","ola ngola","tudo bem","e ai"],
   sobre_ngola: ["quem es tu","es humana","es um robo","onde vives","quem te criou","como te chamas","tens nome","es uma pessoa","o que es tu","es inteligente","es um programa","quem te fez"],
   conversa: ["boa ideia","muito bem","esta a crescer","boa resposta","gostei","parabens","kkkk","hahaha","que fixe","excelente","obrigada pela ajuda","estas a melhorar","obrigado","boa ngola","meu filho","que giro"],
+  programacao: ["como aprender python","o que e uma variavel","como fazer um ciclo for","o que e uma funcao","erro no meu codigo","como programar","o que e javascript","como criar um site","o que e um algoritmo","ensina-me a programar","o que e uma lista em python","como ligar ao supabase"],
   outro: ["qual a capital de franca","quem ganhou o jogo de futebol","receita de funge","que horas sao","como esta o tempo hoje","conta-me uma piada","quem e o presidente","como aprender ingles","quero ver um filme","como instalar o whatsapp","nao entendi","qual a tua cor favorita"],
 };
 
@@ -19,5 +20,6 @@ const RESPOSTAS = {
   saudacao: "Olá! Sou a Ngola. Pergunta-me sobre poupança, câmbio, crédito, orçamento ou investimento.",
   sobre_ngola: "Sou a Ngola, uma IA pequena e simples, criada para aprender sobre finanças pessoais em Kwanzas. Não sou humana: sou código que aprende com exemplos.",
   conversa: "Obrigada! Estou a aprender contigo. Quanto mais perguntas fizeres, melhor eu fico.",
+  programacao: "Programação é um dos meus temas! Ainda estou a estudar: pergunta-me algo concreto e procuro nos livros da minha biblioteca.",
   outro: "",
 };
