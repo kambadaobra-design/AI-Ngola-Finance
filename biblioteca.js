@@ -12,7 +12,7 @@ const biblioteca = {
         if (!r.ok) continue;
         const d = await r.json();
         for (const t of d.trechos) {
-          this.trechos.push({ tipo: "trecho", id: t.id, livro: t.livro, area: d.area, v: t.v, p: t.p, t: t.t });
+          this.trechos.push({ tipo: "trecho", id: t.id, livro: t.livro, area: d.area, v: t.v, p: t.p, loc: t.loc, cod: t.cod, idx: t.idx, t: t.t });
           if (t.v) this.versoes[t.livro] = t.v;
         }
       }
@@ -50,7 +50,7 @@ const biblioteca = {
     this.avg = total / (this.trechos.length || 1);
   },
 
-  pesquisar(pergunta, k = 3) {
+  pesquisar(pergunta, k = 3, relaxado = false) {
     const N = this.trechos.length;
     if (!N) return [];
     const todas = [...new Set(normalizar(pergunta))];
@@ -68,27 +68,45 @@ const biblioteca = {
         s += idf * (f * (k1 + 1)) / (f + k1 * (1 - b + b * this.len[i] / this.avg));
       }
       if (t.tipo === "ficha") s *= 1.4; // conhecimento verificado tem prioridade
-      if (s > 0) res.push({ ...t, score: s, cobertura: achou / todas.length });
+      if (s > 0) res.push({ ...t, score: s, achou, cobertura: achou / todas.length });
     }
     res.sort((a, c) => c.score - a.score);
-    if (!res.length || res[0].cobertura < 0.5) return [];
+    if (!res.length) return [];
+    // Só responde se o melhor trecho for mesmo relevante (calibrado com perguntas reais)
+    const r0 = res[0];
+    const forte = r0.achou >= 2 ? r0.cobertura > 0.5 : (todas.length === 1 && r0.score >= 6);
+    const fraco = relaxado && r0.cobertura >= 0.4 && r0.score >= 4.5; // temas banca/programação
+    if (!forte && !fraco) return [];
     const fichasTrechos = new Set(res.filter(r => r.tipo === "ficha" && r.trecho_id).map(r => r.trecho_id));
     return res.filter(r => r.score >= res[0].score * 0.6 && !fichasTrechos.has(r.id)).slice(0, k);
   },
 
+  // Texto de uma resposta feita só com trechos de conteúdo (os de índice tratam-se à parte)
   formatar(achados) {
     const juridico = achados.some(a => (a.area || "").startsWith("direito"));
     const intro = juridico ? "Encontrei isto na minha biblioteca (excerto de texto, não é aconselhamento jurídico):"
                            : "Encontrei isto na minha biblioteca:";
     const partes = achados.map((a, i) => {
-      const t = a.t.length > 650 ? a.t.slice(0, 650).replace(/\s\S*$/, "") + "…" : a.t;
-      let fonte = a.tipo === "ficha" ? `✔ verificado · ${a.livro}, pág. ${a.p}` : `📖 ${a.livro}, pág. ${a.p}`;
+      const tem = a.t.includes("```");
+      const max = tem ? 1600 : 650;
+      let t = a.t;
+      if (t.length > max) { t = t.slice(0, max).replace(/\s\S*$/, "") + "…"; if ((t.match(/```/g) || []).length % 2) t += "\n```"; }
+      const onde = a.loc || ("pág. " + a.p);
+      let fonte = a.tipo === "ficha" ? `✔ verificado · ${a.livro}, ${onde}` : `📖 ${a.livro}, ${onde}`;
       if (a.v) fonte += ` (versão ${a.v})`;
       const atual = this.versoes[a.livro];
       if (a.tipo === "ficha" && atual && a.v && atual !== a.v)
         fonte += `\n⚠ O livro foi atualizado para a versão ${atual}: confirma se esta ficha ainda vale.`;
+      if (a.cod === 1) fonte += "\n⚠ Código reconstruído automaticamente (a indentação original perdeu-se; em testes ~82% das linhas saem certas). Confirma antes de copiar.";
+      if (a.cod === 2) fonte += "\n⚠ Este código não passou na verificação de sintaxe. Não copies sem rever.";
       return `[${i + 1}] ${t}\n${fonte}`;
     });
     return intro + "\n\n" + partes.join("\n\n");
+  },
+
+  // Quando só há títulos do índice do curso (sem conteúdo)
+  formatarIndice(achados) {
+    const linhas = achados.slice(0, 3).map(a => `• ${a.t.replace(/^-\s*/, "")} (${a.livro.split(" (")[0]})`);
+    return "No índice do meu curso há aulas sobre isto, mas ainda não tenho o conteúdo delas:\n" + linhas.join("\n");
   },
 };

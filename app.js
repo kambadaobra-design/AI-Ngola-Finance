@@ -5,8 +5,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const LIMITE = 0.3;
 const INTENCOES = Object.keys(DADOS);
 const NOMES = { poupar:"Poupança", cambio:"Câmbio", credito:"Crédito", orcamento:"Orçamento",
-  investir:"Investimento", programacao:"Programação", saudacao:"Saudação", sobre_ngola:"Sobre a Ngola", conversa:"Conversa", outro:"Fora do assunto" };
-const USA_LIVROS = new Set(["programacao", "outro"]);
+  investir:"Investimento", programacao:"Programação", banca:"Banca", saudacao:"Saudação", sobre_ngola:"Sobre a Ngola", conversa:"Conversa", outro:"Fora do assunto" };
+const USA_LIVROS = new Set(["programacao", "banca", "outro"]);
 const $ = id => document.getElementById(id);
 const chat = $("chat"), mensagens = $("mensagens"), vazio = $("vazio"),
       input = $("pergunta"), botao = $("enviar"), lista = $("lista"), lateral = $("lateral");
@@ -19,7 +19,10 @@ function adicionar(tipo, texto, meta) {
   vazio.style.display = "none";
   const div = document.createElement("div");
   div.className = "msg " + tipo;
-  div.textContent = texto; // textContent = seguro contra XSS
+  texto.split("```").forEach((p, i) => {       // blocos ``` viram <pre>; tudo via textContent (seguro contra XSS)
+    if (i % 2) { const pre = document.createElement("pre"), cd = document.createElement("code"); cd.textContent = p.replace(/^\n/, "").replace(/\n$/, ""); pre.appendChild(cd); div.appendChild(pre); }
+    else if (p) div.appendChild(document.createTextNode(p));
+  });
   if (meta) { const m = document.createElement("div"); m.className = "meta"; m.textContent = meta; div.appendChild(m); }
   mensagens.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
@@ -57,7 +60,9 @@ function adicionarFeedback(div, pergunta, intencao) {
       barra.appendChild(botaoFb(NOMES[i] || i, async () => {
         mostrar("Obrigada! Vou lembrar-me disto ✅");
         await guardarExemplo(pergunta, i, "corrigido");
-        adicionar("ngola", RESPOSTAS[i] || "Percebi: isso foge do meu assunto. Fico a saber para a próxima.");
+        const ach = biblioteca.pesquisar(pergunta, 3, true).filter(a => !a.idx);
+        adicionar("ngola", ach.length ? biblioteca.formatar(ach)
+          : `Anotado: é sobre ${NOMES[i] || i}. Ainda não tenho conteúdo que responda a isto com precisão: ele tem de entrar na biblioteca.`);
       }));
     }
   });
@@ -92,21 +97,30 @@ function adicionarFichas(div, pergunta, achados) {
 async function perguntar(texto) {
   const pergunta = (texto || input.value).trim();
   if (!pergunta) return;
+  if (pergunta.length > 600) { // textos longos não são perguntas: não guardar
+    input.value = ""; input.style.height = "auto";
+    adicionar("user", pergunta.slice(0, 200) + "…");
+    adicionar("ngola", "Isto parece um texto longo, não uma pergunta, por isso não o guardei. Para me ensinares com aulas ou livros, eles têm de entrar na biblioteca.");
+    return;
+  }
   input.value = ""; input.style.height = "auto"; botao.disabled = true;
   adicionar("user", pergunta);
 
   const { intencao, confianca } = ngola.prever(pergunta);
   const entendeu = intencao !== "outro" && confianca >= LIMITE;
-  const forte = entendeu && confianca >= 0.6 && !USA_LIVROS.has(intencao);
-  const achados = forte ? [] : biblioteca.pesquisar(pergunta);
+  const achados = biblioteca.pesquisar(pergunta, 3, intencao === "banca" || intencao === "programacao");
+  const conteudo = achados.filter(a => !a.idx), indice = achados.filter(a => a.idx);
+  const geral = entendeu ? RESPOSTAS[intencao] : "";
   let resposta, div;
-  if (achados.length) {
-    resposta = biblioteca.formatar(achados);
-    div = adicionar("ngola", resposta, `📖 pesquisa na biblioteca · ${achados.length} trecho(s)`);
-    adicionarFichas(div, pergunta, achados);
+  if (conteudo.length) {
+    resposta = biblioteca.formatar(conteudo);
+    div = adicionar("ngola", resposta, `📖 pesquisa na biblioteca · ${conteudo.length} trecho(s)`);
+    adicionarFichas(div, pergunta, conteudo);
+  } else if (indice.length) {
+    resposta = biblioteca.formatarIndice(indice) + (geral ? "\n\nResposta geral: " + geral : "");
+    div = adicionar("ngola", resposta, "📑 só tenho o índice · diz-me se queres que a Ngola aprenda estas aulas");
   } else {
-    resposta = entendeu ? RESPOSTAS[intencao]
-      : "Ainda não percebi bem. Podes reformular? Sei falar de poupança, câmbio, crédito, orçamento, investimento e programação.";
+    resposta = geral || "Ainda não percebi bem. Podes reformular? Sei falar de poupança, câmbio, crédito, orçamento, investimento, banca e programação.";
     div = adicionar("ngola", resposta, `intenção: ${intencao} · confiança: ${Math.round(confianca * 100)}%`);
     adicionarFeedback(div, pergunta, intencao);
   }
