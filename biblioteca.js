@@ -12,7 +12,7 @@ const biblioteca = {
         if (!r.ok) continue;
         const d = await r.json();
         for (const t of d.trechos) {
-          this.trechos.push({ tipo: "trecho", id: t.id, livro: t.livro, area: d.area, v: t.v, p: t.p, loc: t.loc, cod: t.cod, idx: t.idx, t: t.t });
+          this.trechos.push({ tipo: "trecho", id: t.id, livro: t.livro, area: d.area, v: t.v, p: t.p, loc: t.loc, cod: t.cod, idx: t.idx, prog: t.prog, t: t.t });
           if (t.v) this.versoes[t.livro] = t.v;
         }
       }
@@ -68,6 +68,7 @@ const biblioteca = {
         s += idf * (f * (k1 + 1)) / (f + k1 * (1 - b + b * this.len[i] / this.avg));
       }
       if (t.tipo === "ficha") s *= 1.4; // conhecimento verificado tem prioridade
+      if (t.prog) s *= 0.5;             // texto geral do programa do curso pesa menos do que as aulas
       if (s > 0) res.push({ ...t, score: s, achou, cobertura: achou / todas.length });
     }
     res.sort((a, c) => c.score - a.score);

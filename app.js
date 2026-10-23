@@ -108,7 +108,7 @@ async function perguntar(texto) {
 
   const { intencao, confianca } = ngola.prever(pergunta);
   const entendeu = intencao !== "outro" && confianca >= LIMITE;
-  const achados = biblioteca.pesquisar(pergunta, 3, intencao === "banca" || intencao === "programacao");
+  const achados = biblioteca.pesquisar(pergunta, 3, ["banca", "programacao", "outro"].includes(intencao));
   const conteudo = achados.filter(a => !a.idx), indice = achados.filter(a => a.idx);
   const geral = entendeu ? RESPOSTAS[intencao] : "";
   let resposta, div;

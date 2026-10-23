@@ -21,7 +21,7 @@ const RESPOSTAS = {
   saudacao: "Olá! Sou a Ngola. Pergunta-me sobre poupança, câmbio, crédito, orçamento ou investimento.",
   sobre_ngola: "Sou a Ngola, uma IA pequena e simples, criada para aprender sobre finanças pessoais em Kwanzas. Não sou humana: sou código que aprende com exemplos.",
   conversa: "Obrigada! Estou a aprender contigo. Quanto mais perguntas fizeres, melhor eu fico.",
-  programacao: "Programação é um dos meus temas! Ainda estou a estudar: pergunta-me algo concreto e procuro nos livros da minha biblioteca.",
-  banca: "Sobre banca: procuro nas aulas da minha biblioteca. Pergunta algo mais concreto, por exemplo \"o que é liquidez bancária?\".",
+  programacao: "Sim, programação é um dos meus temas! Tenho aulas de Python na biblioteca: pergunta algo concreto, por exemplo \"como funciona o try except?\". Se não encontrar, é porque ainda não tenho essa aula.",
+  banca: "Procurei na minha biblioteca de banca e não encontrei isto. Só tenho o conteúdo de algumas aulas do curso; as restantes ainda não foram carregadas.",
   outro: "",
 };
