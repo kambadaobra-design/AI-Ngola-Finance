@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-AO"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ngola · Ensinar</title>
+<style>
+:root{--bg:#faf9f5;--card:#fff;--text:#3d3929;--muted:#83827d;--line:#e8e6dc;--ok:#2e7d32;--mau:#c62828;--av:#b26a00;--acc:#d97757}
+@media(prefers-color-scheme:dark){:root{--bg:#262624;--card:#30302e;--text:#e8e6dc;--muted:#9c9a92;--line:#434341;--ok:#66bb6a;--mau:#ef5350;--av:#ffb74d}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:20px;line-height:1.5}
+.w{max-width:860px;margin:0 auto}h1{font-family:Georgia,serif;font-weight:400;margin:0 0 4px}.nota{color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;font-size:15px}
+textarea{min-height:240px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.lin{display:grid;grid-template-columns:2fr 1.3fr 1fr;gap:10px}@media(max-width:640px){.lin{grid-template-columns:1fr}}
+button{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;font-size:15px;margin:6px 8px 0 0}button.sec{background:none;color:var(--text);border:1px solid var(--line)}button:disabled{opacity:.4;cursor:default}
+.ok{color:var(--ok)}.mau{color:var(--mau)}.av{color:var(--av)}.tr{border-top:1px solid var(--line);padding:8px 0;font-size:13px}.tr b{font-size:12px}.tag{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:6px}
+ol{padding-left:20px;font-size:14px}
+</style></head><body><div class="w">
+<h1>Ensinar a Ngola</h1>
+<div class="nota">Cola uma aula, a página converte-a em trechos da biblioteca <b>no teu navegador</b> (nada é enviado para lado nenhum) e dá-te os ficheiros para carregares na pasta <code>livros/</code> do GitHub. Não precisa de Python.</div>
+
+<div class="card">
+  <div class="lin">
+    <div><label>Livro / curso</label><input id="livro" list="livros" placeholder="ex: Curso de Banca Angolana (por verificar)"><datalist id="livros"></datalist></div>
+    <div><label>Área</label><select id="area"><option value="programacao">programacao</option><option value="banca">banca</option><option value="direito_contratual">direito_contratual</option><option value="direito_fiscal">direito_fiscal</option><option value="outra">outra…</option></select></div>
+    <div><label>Versão</label><input id="versao" placeholder="2026-10"></div>
+  </div>
+  <div id="outra" style="display:none"><label>Nome da área (letras minúsculas e _)</label><input id="outranome" placeholder="ex: seguros"></div>
+  <label><input type="checkbox" id="py" style="width:auto"> O texto tem código Python (reparar o recuo)</label>
+  <label>Cola aqui a aula (podes colar várias de seguida; se tiver "Aula 23: título", a página identifica-a)</label>
+  <textarea id="texto" placeholder="Aula 23: Crédito pessoal e crédito empresarial&#10;..."></textarea>
+  <button id="conv">1. Converter</button>
+</div>
+
+<div id="prev"></div>
+
+<div class="card nota">
+<b>Dica para o código Python:</b> copia a aula da fonte original usando o botão <b>"copiar" do bloco de código</b>. Copiar o texto à mão perde o recuo, e em Python isso muda o significado. Se o recuo for reconstruído automaticamente, a página avisa e a Ngola mostra o aviso nas respostas.<br><br>
+<b>Depois de descarregar:</b> entra na pasta <code>livros/</code> do GitHub, <i>Add file → Upload files</i>, arrasta os dois ficheiros (substituem os antigos) e espera o ✅ verde.
+</div>
+
+<script src="conversor.js?v=11"></script>
+<script>
+const $ = id => document.getElementById(id);
+let resultado = null;
+const nomeArea = () => $("area").value === "outra" ? ($("outranome").value.trim().toLowerCase().replace(/[^a-z0-9_]/g, "_") || "outra") : $("area").value;
+function el(tag, txt, cls) { const e = document.createElement(tag); if (txt !== undefined) e.textContent = txt; if (cls) e.className = cls; return e; }
+function baixar(nome, obj) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(obj)], { type: "application/json" })); a.download = nome; a.click();
+}
+async function lerJson(url) { try { const r = await fetch(url + "?t=" + Date.now()); return r.ok ? await r.json() : null; } catch (e) { return null; } }
+
+$("area").onchange = () => { $("outra").style.display = $("area").value === "outra" ? "" : "none"; $("py").checked = $("area").value === "programacao"; };
+$("py").checked = true; $("versao").value = new Date().toISOString().slice(0, 7);
+(async () => {                                       // sugere os livros que já existem
+  const idx = await lerJson("livros/index.json"); if (!idx) return;
+  const nomes = new Set();
+  for (const f of idx.ficheiros) { const d = await lerJson("livros/" + f); if (d) d.trechos.forEach(t => nomes.add(t.livro)); }
+  nomes.forEach(n => { const o = document.createElement("option"); o.value = n; $("livros").appendChild(o); });
+})();
+
+$("conv").onclick = async () => {
+  const livro = $("livro").value.trim(), texto = $("texto").value, versao = $("versao").value.trim() || "sem-versao", area = nomeArea();
+  const prev = $("prev"); prev.replaceChildren();
+  if (!livro || texto.trim().length < 30) { prev.appendChild(el("div", "Preenche o nome do livro e cola o texto da aula.", "card mau")); return; }
+  const r = Conv.converter(texto, { livro, versao, python: $("py").checked });
+  if (!r.trechos.length) { prev.appendChild(el("div", "Não consegui criar trechos a partir deste texto.", "card mau")); return; }
+  const existente = await lerJson("livros/" + area + ".json");
+  const j = Conv.juntar(existente, r.trechos, area, livro);
+  resultado = { area, dados: j.dados };
+
+  const c = el("div", undefined, "card"); prev.appendChild(c);
+  c.appendChild(el("div", `✔ ${r.trechos.length} trechos criados`, "ok"));
+  c.appendChild(el("div", j.locs.length ? "Aulas identificadas: " + j.locs.join(", ") : "Não encontrei títulos do tipo \"Aula N:\"; os trechos ficam como \"parte N\".", "nota"));
+  if (j.removidos) c.appendChild(el("div", `↻ ${j.removidos} trechos antigos das mesmas aulas serão substituídos (inclui linhas de índice).`, "nota"));
+  if (!existente) c.appendChild(el("div", `Ficheiro novo: livros/${area}.json`, "nota"));
+  const s = r.stats;
+  if (s.ok + s.rec + s.bad) {
+    c.appendChild(el("div", `Código Python: ${s.ok} blocos com recuo original ✔` + (s.rec ? ` · ${s.rec} reconstruídos ⚠ (não verificados a fundo)` : "") + (s.bad ? ` · ${s.bad} suspeitos ✘` : ""), s.bad ? "mau" : s.rec ? "av" : "ok"));
+    if (s.rec || s.bad) c.appendChild(el("div", "O recuo estava perdido e foi reconstruído por regras: costuma acertar a maior parte das linhas, mas não sabe onde acaba cada bloco. A Ngola avisará isso ao mostrar o código. Para ficar exato, volta a copiar com o botão \"copiar\" do bloco.", "nota"));
+  }
+  r.trechos.slice(0, 8).forEach(t => {
+    const d = el("div", undefined, "tr"); d.appendChild(el("b", t.loc || "(sem aula)"));
+    if (t.cod) d.appendChild(el("span", t.cod === 1 ? "código reconstruído" : "código suspeito", "tag"));
+    d.appendChild(el("div", t.t.replace(/```/g, "").replace(/\s+/g, " ").slice(0, 160) + "…")); c.appendChild(d);
+  });
+  if (r.trechos.length > 8) c.appendChild(el("div", `… e mais ${r.trechos.length - 8} trechos.`, "nota"));
+
+  const b1 = el("button", `2. Descarregar ${area}.json`), b2 = el("button", "3. Descarregar index.json", "sec");
+  b1.onclick = () => baixar(area + ".json", resultado.dados);
+  b2.onclick = async () => { const idx = (await lerJson("livros/index.json")) || { ficheiros: [] }; if (!idx.ficheiros.includes(area + ".json")) idx.ficheiros.push(area + ".json"); idx.ficheiros.sort(); baixar("index.json", idx); };
+  c.appendChild(b1); c.appendChild(b2);
+};
+</script></div></body></html>
