@@ -2,7 +2,6 @@ const SUPABASE_URL = "https://jhxqhlggzmpytbysvskm.supabase.co";
 const SUPABASE_KEY = "sb_publishable_PEOef1yV76nxews5F8KVHQ_G0w5Z5yP";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const LIMITE = 0.3;
 const INTENCOES = Object.keys(DADOS);
 const NOMES = { poupar:"Poupança", cambio:"Câmbio", credito:"Crédito", orcamento:"Orçamento",
   investir:"Investimento", programacao:"Programação", banca:"Banca", saudacao:"Saudação", sobre_ngola:"Sobre a Ngola", conversa:"Conversa", outro:"Fora do assunto" };
@@ -106,21 +105,18 @@ async function perguntar(texto) {
   input.value = ""; input.style.height = "auto"; botao.disabled = true;
   adicionar("user", pergunta);
 
-  const { intencao, confianca } = ngola.prever(pergunta);
-  const entendeu = intencao !== "outro" && confianca >= LIMITE;
-  const achados = biblioteca.pesquisar(pergunta, 3, ["banca", "programacao", "outro"].includes(intencao));
-  const conteudo = achados.filter(a => !a.idx), indice = achados.filter(a => a.idx);
-  const geral = entendeu ? RESPOSTAS[intencao] : "";
+  const r = rotear(pergunta), { intencao, confianca } = r;
   let resposta, div;
-  if (conteudo.length) {
-    resposta = biblioteca.formatar(conteudo);
-    div = adicionar("ngola", resposta, `📖 pesquisa na biblioteca · ${conteudo.length} trecho(s)`);
-    adicionarFichas(div, pergunta, conteudo);
-  } else if (indice.length) {
-    resposta = biblioteca.formatarIndice(indice) + (geral ? "\n\nResposta geral: " + geral : "");
-    div = adicionar("ngola", resposta, "📑 só tenho o índice · diz-me se queres que a Ngola aprenda estas aulas");
+  if (r.tipo === "conteudo") {
+    resposta = biblioteca.formatar(r.conteudo);
+    div = adicionar("ngola", resposta, `📖 pesquisa na biblioteca · ${r.conteudo.length} trecho(s)`);
+    adicionarFichas(div, pergunta, r.conteudo);
+  } else if (r.tipo === "indice") {
+    resposta = biblioteca.formatarIndice(r.indice) + (r.geral ? "\n\nResposta geral: " + r.geral : "");
+    div = adicionar("ngola", resposta, "📑 só tenho o índice · o conteúdo destas aulas ainda não foi carregado");
   } else {
-    resposta = geral || "Ainda não percebi bem. Podes reformular? Sei falar de poupança, câmbio, crédito, orçamento, investimento, banca e programação.";
+    resposta = r.tipo === "pronta" ? r.geral
+      : "Ainda não percebi bem. Podes reformular? Sei falar de poupança, câmbio, crédito, orçamento, investimento, banca e programação.";
     div = adicionar("ngola", resposta, `intenção: ${intencao} · confiança: ${Math.round(confianca * 100)}%`);
     adicionarFeedback(div, pergunta, intencao);
   }

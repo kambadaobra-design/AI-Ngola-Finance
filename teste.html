@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-AO"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ngola · Perguntas de ouro</title>
+<style>
+:root{--bg:#faf9f5;--card:#fff;--text:#3d3929;--muted:#83827d;--line:#e8e6dc;--ok:#2e7d32;--mau:#c62828;--acc:#d97757}
+@media(prefers-color-scheme:dark){:root{--bg:#262624;--card:#30302e;--text:#e8e6dc;--muted:#9c9a92;--line:#434341;--ok:#66bb6a;--mau:#ef5350}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:20px;line-height:1.5}
+.w{max-width:900px;margin:0 auto}h1{font-family:Georgia,serif;font-weight:400;margin:0 0 4px}
+.nota{color:var(--muted);font-size:14px;margin-bottom:16px}
+.grande{font-size:44px;font-family:Georgia,serif}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.ok{color:var(--ok)}.mau{color:var(--mau)}button{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:14px}
+.cat{font-weight:600;background:var(--bg)}.barra{height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:90px}.barra i{display:block;height:100%;background:var(--ok)}
+</style></head><body><div class="w">
+<h1>Perguntas de ouro</h1>
+<div class="nota">Corre as perguntas contra o cérebro real da Ngola (<code>rotear()</code>, o mesmo código do site) e dá uma nota. Não usa as lições dos utilizadores: o resultado é sempre comparável. Os casos estão em <code>ouro.js</code> e estão <b>por confirmar</b>.</div>
+<div id="estado">A carregar a biblioteca…</div><div id="res"></div>
+<script src="dados.js?v=10"></script><script src="ngola.js?v=10"></script><script src="biblioteca.js?v=10"></script><script src="roteador.js?v=10"></script><script src="ouro.js?v=10"></script>
+<script>
+const esc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+(async () => {
+  await biblioteca.carregar();
+  const res = correrOuro(), certos = res.filter(r => r.ok).length, pct = Math.round(100 * certos / res.length);
+  let antes = null; try { antes = JSON.parse(localStorage.getItem("ngola_ouro")); } catch (e) {}
+  const falhas = res.filter(r => !r.ok).map(r => r.q);
+  let cmp = "";
+  if (antes) {
+    const novos = falhas.filter(q => !antes.falhas.includes(q)), corr = antes.falhas.filter(q => !falhas.includes(q));
+    cmp = `<div class="nota">Corrida anterior (${esc(antes.data)}): ${antes.pct}% → agora ${pct}%.` +
+      (corr.length ? `<br><span class="ok">Corrigidas (${corr.length}):</span> ${corr.map(esc).join(" · ")}` : "") +
+      (novos.length ? `<br><span class="mau">NOVOS ERROS (${novos.length}):</span> ${novos.map(esc).join(" · ")}` : "") + `</div>`;
+  }
+  try { localStorage.setItem("ngola_ouro", JSON.stringify({ data: new Date().toLocaleString("pt-PT"), pct, falhas })); } catch (e) {}
+  const cats = {}; res.forEach(r => { (cats[r.cat] = cats[r.cat] || []).push(r); });
+  let h = `<div class="card"><div class="grande">${pct}%</div><div>${certos} de ${res.length} perguntas certas</div>${cmp}</div><div class="card"><table><tr><th>Categoria</th><th>Certas</th><th></th></tr>`;
+  for (const c in cats) { const k = cats[c].filter(r => r.ok).length, t = cats[c].length; h += `<tr><td>${esc(c)}</td><td>${k}/${t}</td><td><div class="barra"><i style="width:${100*k/t}%"></i></div></td></tr>`; }
+  h += `</table></div><div class="card"><table><tr><th></th><th>Pergunta</th><th>A Ngola fez</th></tr>`;
+  for (const c in cats) { h += `<tr><td colspan="3" class="cat">${esc(c)}</td></tr>`; cats[c].forEach(r => h += `<tr><td class="${r.ok ? "ok" : "mau"}">${r.ok ? "✔" : "✘"}</td><td>${esc(r.q)}</td><td>${esc(r.obs)}</td></tr>`); }
+  h += `</table></div><button id="csv">Descarregar relatório (CSV)</button>`;
+  document.getElementById("estado").textContent = `Biblioteca: ${biblioteca.trechos.length} trechos carregados.`;
+  document.getElementById("res").innerHTML = h;
+  document.getElementById("csv").onclick = () => {
+    const linhas = [["categoria","pergunta","certo","ngola_fez"], ...res.map(r => [r.cat, r.q, r.ok ? "sim" : "nao", r.obs])];
+    const blob = new Blob(["\ufeff" + linhas.map(l => l.map(x => '"' + String(x).replace(/"/g, '""') + '"').join(";")).join("\n")], { type: "text/csv" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ngola_ouro.csv"; a.click();
+  };
+})();
+</script></div></body></html>

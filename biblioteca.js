@@ -39,13 +39,13 @@ const biblioteca = {
   },
 
   indexar() {
-    this.tf = []; this.len = []; this.df = {};
+    this.tf = []; this.len = []; this.df = {}; this.seq = [];
     let total = 0;
     for (const t of this.trechos) {
       const palavras = normalizar(t.busca || t.t), f = {};
       for (const p of palavras) f[p] = (f[p] || 0) + 1;
       for (const p in f) this.df[p] = (this.df[p] || 0) + 1;
-      this.tf.push(f); this.len.push(palavras.length); total += palavras.length;
+      this.tf.push(f); this.len.push(palavras.length); this.seq.push(palavras); total += palavras.length;
     }
     this.avg = total / (this.trechos.length || 1);
   },
@@ -56,6 +56,7 @@ const biblioteca = {
     const todas = [...new Set(normalizar(pergunta))];
     const q = todas.filter(p => this.df[p]);
     if (!q.length) return [];
+    const minCob = relaxado === true ? 0.4 : (relaxado || 0), conj = new Set(todas);
     const k1 = 1.5, b = 0.75, res = [];
     for (let i = 0; i < N; i++) {
       const t = this.trechos[i];
@@ -68,15 +69,18 @@ const biblioteca = {
         s += idf * (f * (k1 + 1)) / (f + k1 * (1 - b + b * this.len[i] / this.avg));
       }
       if (t.tipo === "ficha") s *= 1.4; // conhecimento verificado tem prioridade
+      let adj = 0;                       // pares de palavras da pergunta que aparecem seguidas no trecho
+      if (todas.length >= 2) { const q2 = this.seq[i]; for (let j = 0; j + 1 < q2.length; j++) if (q2[j] !== q2[j+1] && conj.has(q2[j]) && conj.has(q2[j+1])) adj++; }
+      if (adj) s *= 1.25;
       if (t.prog) s *= 0.5;             // texto geral do programa do curso pesa menos do que as aulas
-      if (s > 0) res.push({ ...t, score: s, achou, cobertura: achou / todas.length });
+      if (s > 0) res.push({ ...t, score: s, achou, adj, cobertura: achou / todas.length });
     }
     res.sort((a, c) => c.score - a.score);
     if (!res.length) return [];
     // Só responde se o melhor trecho for mesmo relevante (calibrado com perguntas reais)
     const r0 = res[0];
-    const forte = r0.achou >= 2 ? r0.cobertura > 0.5 : (todas.length === 1 && r0.score >= 6);
-    const fraco = relaxado && r0.cobertura >= 0.4 && r0.score >= 4.5; // temas banca/programação
+    const forte = r0.achou >= 2 ? (r0.cobertura > 0.5 && (todas.length < 2 || r0.adj > 0)) : (todas.length === 1 && r0.score >= 6);
+    const fraco = minCob > 0 && r0.cobertura >= minCob && r0.score >= 4.5; // banca/programação: 0.4 · fora do assunto: 0.8
     if (!forte && !fraco) return [];
     const fichasTrechos = new Set(res.filter(r => r.tipo === "ficha" && r.trecho_id).map(r => r.trecho_id));
     return res.filter(r => r.score >= res[0].score * 0.6 && !fichasTrechos.has(r.id)).slice(0, k);
