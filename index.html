@@ -41,24 +41,18 @@ textarea{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(
 #enviar{background:var(--accent);color:#fff;border:0;border-radius:12px;width:38px;height:38px;font-size:18px;cursor:pointer}
 #enviar:disabled{opacity:.5}
 .aviso{text-align:center;color:var(--muted);font-size:12px;margin-top:8px}
-#fechar{display:none;margin-left:auto;background:none;border:0;font-size:20px;color:var(--text);cursor:pointer}
-@media(max-width:760px){aside{position:fixed;inset:0 auto 0 0;z-index:5;transform:translateX(-100%);transition:.2s}aside.aberta{transform:none}#menu{display:block}#fechar{display:block}aside.aberta+#fundo{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:4}}
-.fb{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-family:system-ui,sans-serif;font-size:13px;color:var(--muted)}
-.fb button{background:none;border:1px solid var(--line);border-radius:8px;padding:2px 9px;cursor:pointer;font-size:14px;color:var(--text)}
-.fb button:hover{border-color:var(--accent)}
-.msg pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:var(--user);padding:12px;border-radius:10px;overflow-x:auto;white-space:pre;margin:10px 0;line-height:1.45}
+@media(max-width:760px){aside{position:fixed;inset:0 auto 0 0;z-index:5;transform:translateX(-100%);transition:.2s}aside.aberta{transform:none}#menu{display:block}}
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute"><symbol id="pensador" viewBox="0 0 100 160"><g fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round"><path d="M50 42C18 62 18 112 50 136"/><path d="M62 44C84 58 84 96 66 118"/></g><circle cx="56" cy="24" r="14" fill="currentColor"/><rect x="20" y="142" width="64" height="12" fill="currentColor"/></symbol></svg>
 
 <aside id="lateral">
-  <div class="logo"><svg class="ico"><use href="#pensador"/></svg> Ngola<button id="fechar" aria-label="Fechar menu">✕</button></div>
+  <div class="logo"><svg class="ico"><use href="#pensador"/></svg> Ngola</div>
   <button id="nova">＋ Nova conversa</button>
   <div class="titulo">Conversas</div>
   <div id="lista"></div>
 </aside>
-<div id="fundo"></div>
 
 <main>
   <button id="menu">☰</button>
@@ -81,15 +75,13 @@ textarea{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(
       <textarea id="pergunta" rows="1" placeholder="Pergunta-me sobre poupança, câmbio, crédito..."></textarea>
       <button id="enviar" title="Enviar">↑</button>
     </div>
-    <div class="aviso">A Ngola está a aprender e pode errar. · versão 10</div>
+    <div class="aviso">A Ngola está a aprender e pode errar.</div>
   </footer>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="dados.js?v=10"></script>
-<script src="ngola.js?v=10"></script>
-<script src="biblioteca.js?v=10"></script>
-<script src="roteador.js?v=10"></script>
-<script src="app.js?v=10"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="dados.js"></script>
+<script src="ngola.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
