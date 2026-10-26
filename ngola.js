@@ -1,4 +1,6 @@
-const STOP = new Set(["qual","quais","de","do","da","dos","das","um","uma","em","no","na","para","por","com","que","eu","me","meu","minha","se","ao","como","quanto","quero","preciso","sabes","sao","posso","tenho","ele","ela"]);
+// NGOLA_V
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).ngola = 11;
+const STOP = new Set(["qual","quais","de","do","da","dos","das","um","uma","em","no","na","para","por","com","que","eu","me","meu","minha","se","ao","como","quanto","quero","preciso","sao","posso","tenho","ele","ela"]);
 
 function reduzir(p) {
   if (p.length > 4 && p.endsWith("es")) return p.slice(0, -2); // dolares -> dolar

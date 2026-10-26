@@ -1,3 +1,5 @@
+// NGOLA_V
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).roteador = 11;
 // Decide COMO a Ngola responde. É usado pelo site (app.js) e pelo teste (teste.html): o mesmo código, os mesmos resultados.
 const LIMITE = 0.3;
 

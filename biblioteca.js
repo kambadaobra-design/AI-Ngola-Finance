@@ -1,3 +1,5 @@
+// NGOLA_V
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).biblioteca = 11;
 // Biblioteca da Ngola: trechos de livros + fichas verificadas, pesquisa BM25
 const biblioteca = {
   trechos: [], tf: [], len: [], df: {}, avg: 1,
