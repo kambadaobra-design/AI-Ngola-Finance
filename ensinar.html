@@ -10,7 +10,7 @@
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
 input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;font-size:15px}
 textarea{min-height:240px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
-.lin{display:grid;grid-template-columns:2fr 1.3fr 1fr;gap:10px}@media(max-width:640px){.lin{grid-template-columns:1fr}}
+.lin{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr;gap:10px}@media(max-width:640px){.lin{grid-template-columns:1fr}}
 button{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;font-size:15px;margin:6px 8px 0 0}button.sec{background:none;color:var(--text);border:1px solid var(--line)}button:disabled{opacity:.4;cursor:default}
 .ok{color:var(--ok)}.mau{color:var(--mau)}.av{color:var(--av)}.tr{border-top:1px solid var(--line);padding:8px 0;font-size:13px}.tr b{font-size:12px}.tag{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:6px}
 ol{padding-left:20px;font-size:14px}
@@ -21,9 +21,11 @@ ol{padding-left:20px;font-size:14px}
 <div class="card">
   <div class="lin">
     <div><label>Livro / curso</label><input id="livro" list="livros" placeholder="ex: Curso de Banca Angolana (por verificar)"><datalist id="livros"></datalist></div>
-    <div><label>Área</label><select id="area"><option value="programacao">programacao</option><option value="banca">banca</option><option value="direito_contratual">direito_contratual</option><option value="direito_fiscal">direito_fiscal</option><option value="outra">outra…</option></select></div>
+    <div><label>Área</label><select id="area"></select></div>
+    <div><label>País da lei/texto</label><select id="pais"><option value="AO">Angola</option><option value="PT">Portugal</option><option value="BR">Brasil</option><option value="INT">Internacional / geral</option></select></div>
     <div><label>Versão</label><input id="versao" placeholder="2026-10"></div>
   </div>
+  <div class="nota" id="fontes"></div>
   <div id="outra" style="display:none"><label>Nome da área (letras minúsculas e _)</label><input id="outranome" placeholder="ex: seguros"></div>
   <label><input type="checkbox" id="py" style="width:auto"> O texto tem código Python (reparar o recuo)</label>
   <label>Cola aqui a aula (podes colar várias de seguida; se tiver "Aula 23: título", a página identifica-a)</label>
@@ -38,7 +40,8 @@ ol{padding-left:20px;font-size:14px}
 <b>Depois de descarregar:</b> entra na pasta <code>livros/</code> do GitHub, <i>Add file → Upload files</i>, arrasta os dois ficheiros (substituem os antigos) e espera o ✅ verde.
 </div>
 
-<script src="conversor.js?v=11"></script>
+<script src="areas.js?v=12"></script>
+<script src="conversor.js?v=12"></script>
 <script>
 const $ = id => document.getElementById(id);
 let resultado = null;
@@ -49,8 +52,21 @@ function baixar(nome, obj) {
 }
 async function lerJson(url) { try { const r = await fetch(url + "?t=" + Date.now()); return r.ok ? await r.json() : null; } catch (e) { return null; } }
 
-$("area").onchange = () => { $("outra").style.display = $("area").value === "outra" ? "" : "none"; $("py").checked = $("area").value === "programacao"; };
-$("py").checked = true; $("versao").value = new Date().toISOString().slice(0, 7);
+for (const g of GRUPOS) {                                   // lista de áreas vinda do catálogo (areas.js)
+  const og = document.createElement("optgroup"); og.label = g;
+  AREAS.filter(x => x.grupo === g && !x.futuro).forEach(x => { const o = document.createElement("option"); o.value = x.id; o.textContent = x.nome; og.appendChild(o); });
+  $("area").appendChild(og);
+}
+const oo = document.createElement("option"); oo.value = "outra"; oo.textContent = "Outra área…"; $("area").appendChild(oo);
+$("area").onchange = () => {
+  const v = $("area").value, ar = AREA_POR_ID[v];
+  $("outra").style.display = v === "outra" ? "" : "none";
+  $("py").checked = v === "programacao";
+  $("fontes").textContent = ar && ar.fontes ? "Sugestão do que carregar (confirma a versão em vigor): " + ar.fontes : "";
+  if (ar && ar.grupo === "Direito" && $("pais").value === "AO") $("pais").value = "AO";
+};
+$("area").value = "direito_contratual"; $("area").onchange();
+$("versao").value = new Date().toISOString().slice(0, 7);
 (async () => {                                       // sugere os livros que já existem
   const idx = await lerJson("livros/index.json"); if (!idx) return;
   const nomes = new Set();
@@ -62,7 +78,7 @@ $("conv").onclick = async () => {
   const livro = $("livro").value.trim(), texto = $("texto").value, versao = $("versao").value.trim() || "sem-versao", area = nomeArea();
   const prev = $("prev"); prev.replaceChildren();
   if (!livro || texto.trim().length < 30) { prev.appendChild(el("div", "Preenche o nome do livro e cola o texto da aula.", "card mau")); return; }
-  const r = Conv.converter(texto, { livro, versao, python: $("py").checked });
+  const r = Conv.converter(texto, { livro, versao, python: $("py").checked, pais: $("pais").value });
   if (!r.trechos.length) { prev.appendChild(el("div", "Não consegui criar trechos a partir deste texto.", "card mau")); return; }
   const existente = await lerJson("livros/" + area + ".json");
   const j = Conv.juntar(existente, r.trechos, area, livro);

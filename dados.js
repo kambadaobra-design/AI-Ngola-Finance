@@ -1,5 +1,5 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).dados = 11;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).dados = 12;
 const DADOS = {
   poupar: ["como poupar dinheiro","quero guardar dinheiro todos os meses","como juntar kwanzas","dicas para economizar","quero fazer uma reserva de emergencia","como gastar menos e guardar mais","quanto devo guardar do meu salario","ajuda-me a poupar para comprar um carro","quero poupar","preciso de poupar mais","como criar o habito de poupar","poupanca mensal","guardar dinheiro para o futuro"],
   cambio: ["qual o cambio do dolar hoje","quanto vale o euro em kwanzas","como trocar kwanzas por dolares","o kwanza esta a desvalorizar","onde comprar dolares","taxa de cambio do banco","converter dolares para kz","diferenca entre cambio oficial e paralelo","quanto custa o dolar","preco do dolar hoje","quanto esta o euro","o dolar sobe ou desce","valor do dolar no mercado"],
@@ -11,6 +11,7 @@ const DADOS = {
   conversa: ["obrigado","obrigada","muito obrigado","obrigado pela ajuda","valeu","boa ideia","muito bem","esta a crescer","boa resposta","gostei","parabens","kkkk","hahaha","que fixe","excelente","obrigada pela ajuda","estas a melhorar","obrigado","boa ngola","meu filho","que giro"],
   programacao: ["programacao","sabes programar","sabes python","programacao em python","como aprender python","o que e uma variavel","como fazer um ciclo for","o que e uma funcao","erro no meu codigo","como programar","o que e javascript","como criar um site","o que e um algoritmo","ensina-me a programar","o que e uma lista em python","como ligar ao supabase"],
   banca: ["o que e a banca","como funciona a banca angolana","riscos da banca angolana","como esta o sistema bancario","o que e um banco comercial","o que e o banco central","o que e liquidez bancaria","como funciona um banco","o que e a supervisao bancaria","banca angolana o que e","como avaliar o risco de um banco","negociacao com o banco"],
+  areas: ["que areas conheces","sobre que temas sabes falar","que assuntos tens","o que tens na biblioteca","lista de areas","que areas tens","quais sao as tuas areas","que temas conheces","em que areas podes ajudar","que livros tens"],
   outro: ["qual a capital de franca","quem ganhou o jogo de futebol","receita de funge","que horas sao","como esta o tempo hoje","conta-me uma piada","quem e o presidente","como aprender ingles","quero ver um filme","como instalar o whatsapp","nao entendi","qual a tua cor favorita"],
 };
 
@@ -25,5 +26,6 @@ const RESPOSTAS = {
   conversa: "Obrigada! Estou a aprender contigo. Quanto mais perguntas fizeres, melhor eu fico.",
   programacao: "Sim, programação é um dos meus temas! Tenho aulas de Python na biblioteca: pergunta algo concreto, por exemplo \"como funciona o try except?\". Se não encontrar, é porque ainda não tenho essa aula.",
   banca: "Procurei na minha biblioteca de banca e não encontrei isto. Só tenho o conteúdo de algumas aulas do curso; as restantes ainda não foram carregadas.",
+  areas: "",
   outro: "",
 };

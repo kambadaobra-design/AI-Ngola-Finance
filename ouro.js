@@ -4,6 +4,8 @@
 const P = (q, intencoes, cat = "Finanças pessoais") => ({ cat, q, esp: { tipo: ["pronta"], intencao: intencoes } });
 const L = (q, livro, locs, cat) => ({ cat, q, esp: { livro, locs } });
 const R = q => ({ cat: "Recusa (fora do assunto)", q, esp: { tipo: ["naopercebi"] } });
+const AR = q => ({ cat: "Áreas do saber", q, esp: { tipo: ["areas"] } });
+const DA = (q, area) => ({ cat: "Áreas do saber", q, esp: { area } });   // sem conteúdo ainda, mas a Ngola sabe de que área é
 const S = q => ({ cat: "Sem conteúdo (não inventar)", q, esp: { naoConteudo: true } });
 
 const OURO = [
@@ -39,7 +41,16 @@ const OURO = [
   L("como os bancos criam depósitos", "Banca", [2], "Banca"),
   L("qual a estrutura de capital ideal", "Banca", [7, 8], "Banca"),
   L("o que é inflação", "Banca", [1, 5], "Banca"),
+  L("como se calcula o valor presente líquido?", "Banca", [3, 5], "Finanças corporativas (aulas)"),
+  L("o que é o custo de capital?", "Banca", [7], "Finanças corporativas (aulas)"),
+  L("o que é o WACC?", "Banca", [5, 7, 8], "Finanças corporativas (aulas)"),
   L("como os bancos lucram com o credito?", "Banca", [2, 3, 4, 9, 10], "Banca"),
+  // --- Áreas do saber (a Ngola reconhece o tema mesmo sem conteúdo; ao carregares conteúdo, muda estes casos) ---
+  AR("que áreas conheces?"), AR("sobre que temas sabes falar?"), AR("o que tens na biblioteca?"),
+  DA("o que é o IVA?", "direito_fiscal"), DA("qual a pena para quem comete furto?", "direito_penal"),
+  DA("o que é uma pauta aduaneira?", "direito_aduaneiro"),
+  DA("qual a diferença entre custos fixos e custos variáveis?", "contabilidade_gestao"), DA("o que é a elasticidade da procura?", "microeconomia"),
+  DA("como se faz um balanço contabilístico?", "contabilidade_financeira"), DA("o que é uma sociedade por quotas?", "direito_comercial"),
   // --- Temas sem aula carregada: a Ngola NÃO pode fingir que sabe ---
   S("o que é um credito pessoal?"), S("qual a taxa maxima de juros permitida no mercado angolano?"),
   S("o que é uma taxa de esforço?"), S("quantos tipos de credito existe, quais as modalidades no nosso mercado?"),
@@ -49,6 +60,7 @@ const OURO = [
 
 function avaliarOuro(c, r) {
   const e = c.esp;
+  if (e.area) return { ok: r.tipo === "semconteudo" && r.areas.some(a => a.id === e.area), obs: r.tipo + (r.areas ? " · " + r.areas.map(a => a.id).join("/") : "") };
   if (e.naoConteudo) return { ok: r.tipo !== "conteudo", obs: r.tipo };
   if (e.locs) {
     if (r.tipo !== "conteudo") return { ok: false, obs: r.tipo };

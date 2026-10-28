@@ -1,5 +1,5 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).biblioteca = 11;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).biblioteca = 12;
 // Biblioteca da Ngola: trechos de livros + fichas verificadas, pesquisa BM25
 const biblioteca = {
   trechos: [], tf: [], len: [], df: {}, avg: 1,
@@ -14,7 +14,7 @@ const biblioteca = {
         if (!r.ok) continue;
         const d = await r.json();
         for (const t of d.trechos) {
-          this.trechos.push({ tipo: "trecho", id: t.id, livro: t.livro, area: d.area, v: t.v, p: t.p, loc: t.loc, cod: t.cod, idx: t.idx, prog: t.prog, t: t.t });
+          this.trechos.push({ tipo: "trecho", id: t.id, livro: t.livro, area: d.area, v: t.v, p: t.p, loc: t.loc, cod: t.cod, idx: t.idx, prog: t.prog, pais: t.pais, t: t.t });
           if (t.v) this.versoes[t.livro] = t.v;
         }
       }
@@ -74,7 +74,8 @@ const biblioteca = {
       let adj = 0;                       // pares de palavras da pergunta que aparecem seguidas no trecho
       if (todas.length >= 2) { const q2 = this.seq[i]; for (let j = 0; j + 1 < q2.length; j++) if (q2[j] !== q2[j+1] && conj.has(q2[j]) && conj.has(q2[j+1])) adj++; }
       if (adj) s *= 1.25;
-      if (t.prog) s *= 0.5;             // texto geral do programa do curso pesa menos do que as aulas
+      if (t.prog) s *= 0.5;
+      if (t.pais && t.pais !== "AO" && t.pais !== "INT") s *= 0.8; // direito de outros países pesa menos do que o angolano             // texto geral do programa do curso pesa menos do que as aulas
       if (s > 0) res.push({ ...t, score: s, achou, adj, cobertura: achou / todas.length });
     }
     res.sort((a, c) => c.score - a.score);
@@ -91,8 +92,12 @@ const biblioteca = {
   // Texto de uma resposta feita só com trechos de conteúdo (os de índice tratam-se à parte)
   formatar(achados) {
     const juridico = achados.some(a => (a.area || "").startsWith("direito"));
-    const intro = juridico ? "Encontrei isto na minha biblioteca (excerto de texto, não é aconselhamento jurídico):"
-                           : "Encontrei isto na minha biblioteca:";
+    const sufixo = a => /_brasil$|\(Brasil\)/i.test((a.area || "") + " " + (a.livro || "")) ? "BR" : /_portugal$|\(Portugal\)/i.test((a.area || "") + " " + (a.livro || "")) ? "PT" : "";
+    const pais = achados.some(a => a.pais === "BR" || sufixo(a) === "BR") ? "brasil" : achados.some(a => a.pais === "PT" || sufixo(a) === "PT") ? "portugal" : "";
+    const aviso = { brasil: "⚠ ATENÇÃO: este texto é de direito BRASILEIRO, não de Angola. Artigos e leis citados não valem cá.\n\n",
+                    portugal: "⚠ ATENÇÃO: este texto é de direito PORTUGUÊS. O Código Civil angolano tem a mesma origem (1966), mas artigos e leis especiais podem ser diferentes em Angola. Confirma sempre no código angolano em vigor.\n\n" }[pais] || "";
+    const intro = aviso + (juridico ? "Encontrei isto na minha biblioteca (excerto de texto, não é aconselhamento jurídico):"
+                                    : "Encontrei isto na minha biblioteca:");
     const partes = achados.map((a, i) => {
       const tem = a.t.includes("```");
       const max = tem ? 1600 : 650;
@@ -110,6 +115,25 @@ const biblioteca = {
     });
     return intro + "\n\n" + partes.join("\n\n");
   },
+
+  // Quantos trechos há por área (para o "que áreas conheces?")
+  resumoAreas() {
+    const cont = {};
+    for (const t of this.trechos) { if (t.tipo === "ficha") continue; const k = t.area || "?"; cont[k] = cont[k] || { n: 0, p: new Set() }; cont[k].n++; if (t.pais) cont[k].p.add(t.pais); }
+    const com = [], sem = [];
+    for (const a of AREAS) {
+      if (a.futuro) continue;
+      const c = cont[a.id]; delete cont[a.id];
+      if (!c && a.geral) { com.push(`• ${a.nome}: respostas gerais (poupança, câmbio, crédito, orçamento, investimento)`); continue; }
+      if (c) com.push(`• ${a.nome}: ${c.n} trechos` + (c.p.size ? " (" + [...c.p].join(", ") + ")" : "")); else sem.push(a.nome);
+    }
+    const fora = Object.keys(cont).map(k => `• ${k} (fora do catálogo): ${cont[k].n} trechos`);
+    return "Áreas que já tenho na biblioteca:\n" + ([...com, ...fora].join("\n") || "(nenhuma)") +
+      "\n\nÁreas que conheço mas ainda estão sem conteúdo (por ensinar):\n" + sem.join(" · ") +
+      "\n\nPergunta-me sobre qualquer uma das que já tenho.";
+  },
+
+  contagem(areaId) { return this.trechos.filter(t => t.tipo !== "ficha" && t.area === areaId).length; },
 
   // Quando só há títulos do índice do curso (sem conteúdo)
   formatarIndice(achados) {

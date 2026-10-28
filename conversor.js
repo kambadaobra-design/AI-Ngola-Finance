@@ -176,12 +176,12 @@ const Conv = (() => {
   }
 
   // texto -> trechos. opcoes: {livro, versao, python}
-  function converter(texto, { livro, versao, python }) {
+  function converter(texto, { livro, versao, python, pais }) {
     const stats = { ok: 0, rec: 0, bad: 0 };
     const topo = texto.trim().split("\n").slice(0, 3).join(" ");
     const m = topo.match(/\bAulas?\s+(\d+)(?:\s*(?:e|a|-)\s*(\d+))?/);
     const loc0 = m ? (m[2] ? `Aulas ${m[1]} e ${m[2]}` : `Aula ${m[1]}`) : null;
-    const trechos = dividir(preparar(texto, python, stats), loc0).map(t => ({ ...t, livro, v: versao }));
+    const trechos = dividir(preparar(texto, python, stats), loc0).map(t => ({ ...t, livro, v: versao, ...(pais ? { pais } : {}) }));
     return { trechos, stats };
   }
 
@@ -193,7 +193,7 @@ const Conv = (() => {
     const removidos = ex.length - manter.length;
     let p = Math.max(0, ...manter.filter(t => t.livro === livro).map(t => t.p || 0));
     const stamp = Date.now().toString(36), base = slug(livro) + "-v" + slug(novos[0] ? novos[0].v : "x");
-    const add = novos.map((t, i) => { p++; return { id: `${base}-${stamp}-${i + 1}`, livro: t.livro, v: t.v, p, loc: t.loc || `parte ${p}`, ...(t.cod ? { cod: t.cod } : {}), ...(t.idx ? { idx: 1 } : {}), t: t.t }; });
+    const add = novos.map((t, i) => { p++; return { id: `${base}-${stamp}-${i + 1}`, livro: t.livro, v: t.v, ...(t.pais ? { pais: t.pais } : {}), p, loc: t.loc || `parte ${p}`, ...(t.cod ? { cod: t.cod } : {}), ...(t.idx ? { idx: 1 } : {}), t: t.t }; });
     return { dados: { area, trechos: [...manter, ...add] }, removidos, locs: [...locs] };
   }
 

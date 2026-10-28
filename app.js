@@ -1,10 +1,10 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).app = 11;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).app = 12;
 
 // Verifica se todos os ficheiros são da mesma versão. Se não forem, avisa em vez de falhar em silêncio.
 (function verificarVersoes() {
-  const ESPERADA = 11, VV = globalThis.NGOLA_V || {};
-  const falta = ["dados", "ngola", "biblioteca", "roteador", "app"].filter(k => VV[k] !== ESPERADA);
+  const ESPERADA = 12, VV = globalThis.NGOLA_V || {};
+  const falta = ["dados", "ngola", "areas", "biblioteca", "roteador", "app"].filter(k => VV[k] !== ESPERADA);
   const aviso = document.querySelector(".aviso");
   if (!falta.length) { if (aviso) aviso.textContent += " · versão " + ESPERADA; return; }
   const b = document.createElement("div");
@@ -19,7 +19,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const INTENCOES = Object.keys(DADOS);
 const NOMES = { poupar:"Poupança", cambio:"Câmbio", credito:"Crédito", orcamento:"Orçamento",
-  investir:"Investimento", programacao:"Programação", banca:"Banca", saudacao:"Saudação", sobre_ngola:"Sobre a Ngola", conversa:"Conversa", outro:"Fora do assunto" };
+  investir:"Investimento", areas:"Áreas que conheces", programacao:"Programação", banca:"Banca", saudacao:"Saudação", sobre_ngola:"Sobre a Ngola", conversa:"Conversa", outro:"Fora do assunto" };
 const USA_LIVROS = new Set(["programacao", "banca", "outro"]);
 const $ = id => document.getElementById(id);
 const chat = $("chat"), mensagens = $("mensagens"), vazio = $("vazio"),
@@ -123,7 +123,17 @@ async function perguntar(texto) {
   if (typeof rotear !== "function") { adicionar("user", pergunta); adicionar("ngola", "⚠ Falta o ficheiro roteador.js no site. Carrega-o no GitHub (e confirma que o index.html é o mais recente)."); botao.disabled = false; return; }
   const r = rotear(pergunta), { intencao, confianca } = r;
   let resposta, div;
-  if (r.tipo === "conteudo") {
+  if (r.tipo === "areas") {
+    resposta = r.texto;
+    div = adicionar("ngola", resposta, "📚 o que há na minha biblioteca");
+  } else if (r.tipo === "semconteudo") {
+    const a = r.areas[0], outras = r.areas.slice(1).map(x => x.nome).join(" ou ");
+    resposta = (a.n === 0
+      ? `Isto parece ser de ${a.nome}${outras ? " (ou " + outras + ")" : ""}, mas ainda não tenho conteúdo dessa área. Podes ensinar-me carregando textos na página Ensinar.`
+      : `Tenho ${a.n} trechos de ${a.nome}, mas não encontrei nada que responda a esta pergunta. Tenta usar palavras do tema.`)
+      + (r.geral ? "\n\nResposta geral: " + r.geral : "");
+    div = adicionar("ngola", resposta, `🗂 área provável: ${a.nome} · trechos na biblioteca: ${a.n}`);
+  } else if (r.tipo === "conteudo") {
     resposta = biblioteca.formatar(r.conteudo);
     div = adicionar("ngola", resposta, `📖 pesquisa na biblioteca · ${r.conteudo.length} trecho(s)`);
     adicionarFichas(div, pergunta, r.conteudo);
