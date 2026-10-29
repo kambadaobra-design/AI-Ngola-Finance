@@ -1,8 +1,1 @@
-{
- "ficheiros": [
-  "banca.json",
-  "financas_corporativas.json",
-  "matematica_financeira.json",
-  "programacao.json"
- ]
-}
+{"ficheiros":["banca.json","direito_contratual.json","financas_corporativas.json","matematica_financeira.json","programacao.json"]}
