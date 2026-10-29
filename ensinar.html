@@ -28,6 +28,19 @@ ol{padding-left:20px;font-size:14px}
   <div class="nota" id="fontes"></div>
   <div id="outra" style="display:none"><label>Nome da área (letras minúsculas e _)</label><input id="outranome" placeholder="ex: seguros"></div>
   <label><input type="checkbox" id="py" style="width:auto"> O texto tem código Python (reparar o recuo)</label>
+  <label><input type="checkbox" id="indice" style="width:auto"> É um <b>índice</b> (títulos e números de página/artigo, sem o texto)</label>
+  <div class="card" style="margin:10px 0">
+    <b>📷 Ler fotografias</b> <span class="nota">(OCR no teu navegador, sem enviar nada para fora)</span>
+    <div id="ocrEstado" class="nota">A verificar o OCR…</div>
+    <input type="file" id="fotos" accept="image/*" multiple style="margin-top:8px">
+    <div class="lin" style="grid-template-columns:1fr 1fr">
+      <div><label>Rotação da fotografia</label><select id="rot"><option value="auto">Detetar sozinho (0° ou 180°)</option><option value="0">0° (direita)</option><option value="180">180° (de pernas para o ar)</option><option value="90">90° para a direita</option><option value="270">90° para a esquerda</option></select></div>
+      <div><label><input type="checkbox" id="dividir" style="width:auto"> A foto tem duas páginas (dividir ao meio)</label></div>
+    </div>
+    <button id="ocrLer" class="sec">Ler fotografias → texto</button> <button id="ocrTeste" class="sec">Testar o OCR</button>
+    <div id="ocrProg" class="nota"></div>
+    <div class="nota">O texto lido aparece na caixa abaixo para o <b>corrigires</b> antes de converter. O OCR erra: em leis, confere sempre.</div>
+  </div>
   <label>Cola aqui a aula (podes colar várias de seguida; se tiver "Aula 23: título", a página identifica-a)</label>
   <textarea id="texto" placeholder="Aula 23: Crédito pessoal e crédito empresarial&#10;..."></textarea>
   <button id="conv">1. Converter</button>
@@ -40,8 +53,9 @@ ol{padding-left:20px;font-size:14px}
 <b>Depois de descarregar:</b> entra na pasta <code>livros/</code> do GitHub, <i>Add file → Upload files</i>, arrasta os dois ficheiros (substituem os antigos) e espera o ✅ verde.
 </div>
 
-<script src="areas.js?v=12"></script>
-<script src="conversor.js?v=12"></script>
+<script src="areas.js?v=13"></script>
+<script src="ocr.js?v=13"></script>
+<script src="conversor.js?v=13"></script>
 <script>
 const $ = id => document.getElementById(id);
 let resultado = null;
@@ -74,11 +88,42 @@ $("versao").value = new Date().toISOString().slice(0, 7);
   nomes.forEach(n => { const o = document.createElement("option"); o.value = n; $("livros").appendChild(o); });
 })();
 
+// ---------- OCR de fotografias ----------
+Ocr.verificar().then(r => {
+  const el = $("ocrEstado");
+  if (r.ok) { el.textContent = "✔ OCR instalado (ficheiros em ocr/)."; el.className = "nota ok"; }
+  else { el.textContent = "OCR ainda não instalado: faltam " + r.faltam.length + " ficheiro(s). Vê ocr/LEIAME.txt. Em falta: " + r.faltam.join(", "); el.className = "nota av"; }
+});
+const prog = m => { if (m && m.status) $("ocrProg").textContent = m.status + (m.progress != null ? " " + Math.round(m.progress * 100) + "%" : ""); };
+$("ocrTeste").onclick = async () => {
+  $("ocrProg").textContent = "A testar…";
+  try { const t = await Ocr.autoteste(); $("ocrProg").textContent = "Resultado do teste: «" + t + "» (esperado: SECÇÃO VI — Arresto 237)"; }
+  catch (e) { $("ocrProg").textContent = "O OCR falhou: " + e.message; }
+};
+$("ocrLer").onclick = async () => {
+  const fs = [...$("fotos").files]; if (!fs.length) { $("ocrProg").textContent = "Escolhe primeiro uma ou mais fotografias."; return; }
+  let acumulado = "", relatorio = [];
+  try {
+    for (const f of fs) {
+      $("ocrProg").textContent = "A ler " + f.name + "…";
+      const rot = $("rot").value === "auto" ? await Ocr.detetarRotacao(f, prog) : +$("rot").value;
+      const paginas = await Ocr.preparar(f, { rot, dividir: $("dividir").checked });
+      for (let i = 0; i < paginas.length; i++) {
+        const r = await Ocr.ler(paginas[i], prog);
+        acumulado += "\n" + Ocr.limpar(r.texto) + "\n";
+        relatorio.push(`${f.name}${paginas.length > 1 ? " (parte " + (i + 1) + ")" : ""}: rodada ${rot}°, confiança ${Math.round(r.confianca)}%`);
+      }
+    }
+    $("texto").value = (($("texto").value ? $("texto").value + "\n" : "") + acumulado).trim();
+    $("ocrProg").textContent = "Feito. " + relatorio.join(" · ") + " — confere o texto antes de converter.";
+  } catch (e) { $("ocrProg").textContent = "O OCR falhou: " + e.message + " (vê o estado do OCR acima)."; }
+};
+
 $("conv").onclick = async () => {
   const livro = $("livro").value.trim(), texto = $("texto").value, versao = $("versao").value.trim() || "sem-versao", area = nomeArea();
   const prev = $("prev"); prev.replaceChildren();
   if (!livro || texto.trim().length < 30) { prev.appendChild(el("div", "Preenche o nome do livro e cola o texto da aula.", "card mau")); return; }
-  const r = Conv.converter(texto, { livro, versao, python: $("py").checked, pais: $("pais").value });
+  const r = $("indice").checked ? Conv.converterIndice(texto, { livro, versao, pais: $("pais").value }) : Conv.converter(texto, { livro, versao, python: $("py").checked, pais: $("pais").value });
   if (!r.trechos.length) { prev.appendChild(el("div", "Não consegui criar trechos a partir deste texto.", "card mau")); return; }
   const existente = await lerJson("livros/" + area + ".json");
   const j = Conv.juntar(existente, r.trechos, area, livro);

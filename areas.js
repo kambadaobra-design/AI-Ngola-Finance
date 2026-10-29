@@ -1,5 +1,5 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).areas = 12;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).areas = 13;
 
 // CATÁLOGO DE ÁREAS DO SABER DA NGOLA
 // - id: é o nome da "área" usada nos ficheiros livros/<id>.json (o mesmo id serve para vários livros e países)
@@ -43,7 +43,7 @@ const AREAS = (() => {
       ["código penal", "crime", "crimes", "pena", "penas", "homicídio", "furto", "roubo", "burla", "corrupção", "branqueamento de capitais", "peculato", "prisão", "contravenção", "dolo", "tentativa"],
       { fontes: "Código Penal; legislação sobre crimes económicos e branqueamento de capitais" }),
     a("direito_processual", "Direito Processual", "Direito", "Processo civil e penal, recursos, execução",
-      ["código de processo civil", "processo civil", "processo penal", "petição inicial", "contestação", "recurso", "sentença", "citação", "penhora", "execução", "prazo processual", "providência cautelar", "custas judiciais"],
+      ["código de processo civil", "processo civil", "processo penal", "petição inicial", "contestação", "recurso", "sentença", "citação", "penhora", "execução", "prazo processual", "providência cautelar", "custas judiciais", "arresto", "embargo de obra nova", "arrolamento", "caução", "revelia", "reconvenção", "réplica", "articulados", "agravo", "apelação", "revista", "inventário", "jurisdição voluntária", "tribunal arbitral", "acareação", "prova testemunhal", "processo sumário", "alimentos provisórios", "quantia certa"],
       { fontes: "Código de Processo Civil; Código de Processo Penal" }),
     a("direito_trabalho", "Direito do Trabalho", "Direito", "Contrato de trabalho, salários, despedimento, segurança social",
       ["lei geral do trabalho", "contrato de trabalho", "despedimento", "salário", "férias", "trabalhador", "empregador", "segurança social", "inss", "horário de trabalho", "greve", "sindicato"],

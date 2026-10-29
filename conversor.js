@@ -197,6 +197,58 @@ const Conv = (() => {
     return { dados: { area, trechos: [...manter, ...add] }, removidos, locs: [...locs] };
   }
 
-  return { converter, juntar, slug, aberto };
+
+  // ---------- ÍNDICES (de leis e livros): só títulos e números, sem o texto ----------
+  const semAcentos = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const NIVEL = [["LIVRO", 0], ["SUBTITULO", 2], ["TITULO", 1], ["SUBSECCAO", 5], ["SECCAO", 4], ["CAPITULO", 3], ["DIVISAO", 6]];
+  const nivelDe = l => { const u = semAcentos(l.trim()).toUpperCase(); for (const [k, n] of NIVEL) if (new RegExp("^" + k + "\\b").test(u)) return n; return -1; };
+  const ARTIGO = /(\d{1,4})\s*\.?\s*[ºo°]\s*\.?\s*$/;                     // "... 642.º"
+  const PAG = /^(.*?)\s*[.·…]{2,}\s*(\d{1,4})?\s*$|^(.*\S)\s+\(pág\.\s*(\d+)\)\s*$/;
+
+  const junta = (a, b) => /[a-zà-ú]-$/.test(a) && /^[a-zà-ú]/.test(b) ? a.slice(0, -1) + b : a + " " + b;
+  const bonito = t => {                                                  // "TÍTULO II — DO PROCESSO" -> "Título II — Do processo"
+    const [pre, ...resto] = t.split(" — "), maius = s => s && s === s.toUpperCase() && /[A-ZÀ-Ú]/.test(s);
+    const k = pre.split(" "); const cab = k[0] && maius(k[0]) ? k[0][0] + k[0].slice(1).toLowerCase() : k[0];
+    const frase = s => maius(s) ? s[0] + s.slice(1).toLowerCase() : s;
+    return [[cab, ...k.slice(1)].join(" "), ...resto.map(frase)].join(" — ");
+  };
+  function converterIndice(texto, { livro, versao, pais, loc }) {
+    const entradas = []; let pilha = [], ultimo = null, buf = [];
+    const limpaLinha = l => l.replace(BOX, " ").replace(/\u200b/g, "").replace(/\s+$/, "").trim();
+    for (const bruta of texto.split("\n")) {
+      const l = limpaLinha(bruta); if (!l) continue;
+      const n = nivelDe(l);
+      if (n >= 0) {                                                   // linha de índice sistemático
+        buf = []; ultimo = { n, bruto: l, pag: null }; entradas.push(ultimo);
+        const m = l.match(PAG);
+        if (m && m[1] !== undefined) { ultimo.titulo = m[1].trim(); ultimo.pag = m[2] || null; ultimo.fechado = !!m[2]; }
+        else if (m) { ultimo.titulo = m[3].trim(); ultimo.pag = m[4]; ultimo.fechado = true; }
+        else { ultimo.titulo = l; ultimo.fechado = false; }
+      } else if (ultimo && !ultimo.fechado && !ARTIGO.test(l) && buf.length === 0) {   // título que continua na linha seguinte
+        const m = l.match(PAG);
+        if (m && m[1] !== undefined) { ultimo.titulo = junta(ultimo.titulo, m[1].trim()); ultimo.pag = m[2] || null; ultimo.fechado = !!m[2]; }
+        else if (m) { ultimo.titulo = junta(ultimo.titulo, m[3].trim()); ultimo.pag = m[4]; ultimo.fechado = true; }
+        else ultimo.titulo = junta(ultimo.titulo, l);
+      } else {                                                         // índice de epígrafes: acumula até ao "NNN.º"
+        buf.push(l);
+        if (ARTIGO.test(l)) {
+          const txt = buf.reduce((a, b2, k) => k === 0 ? b2 : (buf.length === 2 ? a + " — " + b2 : junta(a, b2)), "");
+          entradas.push({ epigrafe: txt.replace(/;?\s*(\d{1,4})\s*\.?\s*[ºo°]\s*\.?\s*$/, " (artigo $1.º)") }); buf = []; ultimo = null;
+        }
+      }
+    }
+    const trechos = [];
+    for (const e of entradas) {
+      if (e.epigrafe) { trechos.push({ t: e.epigrafe.replace(/\s+/g, " "), idx: 1, loc: loc || "índice de epígrafes" }); continue; }
+      while (pilha.length && pilha[pilha.length - 1].n >= e.n) pilha.pop();
+      const caminho = pilha.map(p => p.titulo), tit = bonito(e.titulo.replace(/\s+/g, " "));
+      pilha.push({ n: e.n, titulo: tit });
+      const t = [...caminho, tit].join(" › ") + (e.pag ? ` (pág. ${e.pag})` : "");
+      trechos.push({ t, idx: 1, loc: loc || "índice sistemático" });
+    }
+    return { trechos: trechos.map(t => ({ ...t, livro, v: versao, ...(pais ? { pais } : {}) })), stats: { ok: 0, rec: 0, bad: 0 } };
+  }
+
+  return { converter, converterIndice, juntar, slug, aberto };
 })();
 if (typeof module !== "undefined") module.exports = Conv;

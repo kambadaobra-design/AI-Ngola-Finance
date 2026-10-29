@@ -4,6 +4,7 @@
 const P = (q, intencoes, cat = "Finanças pessoais") => ({ cat, q, esp: { tipo: ["pronta"], intencao: intencoes } });
 const L = (q, livro, locs, cat) => ({ cat, q, esp: { livro, locs } });
 const R = q => ({ cat: "Recusa (fora do assunto)", q, esp: { tipo: ["naopercebi"] } });
+const I = (q, termo) => ({ cat: "Índices de leis (só títulos)", q, esp: { indiceTermo: termo } });
 const AR = q => ({ cat: "Áreas do saber", q, esp: { tipo: ["areas"] } });
 const DA = (q, area) => ({ cat: "Áreas do saber", q, esp: { area } });   // sem conteúdo ainda, mas a Ngola sabe de que área é
 const S = q => ({ cat: "Sem conteúdo (não inventar)", q, esp: { naoConteudo: true } });
@@ -51,6 +52,10 @@ const OURO = [
   DA("o que é uma pauta aduaneira?", "direito_aduaneiro"),
   DA("qual a diferença entre custos fixos e custos variáveis?", "contabilidade_gestao"), DA("o que é a elasticidade da procura?", "microeconomia"),
   DA("como se faz um balanço contabilístico?", "contabilidade_financeira"), DA("o que é uma sociedade por quotas?", "direito_comercial"),
+  // --- Índices de leis (a Ngola só tem os títulos do Código de Processo Civil, não o texto dos artigos) ---
+  I("em que artigo do código de processo civil está a acareação?", "642"), I("o que é o arresto?", "Arresto"),
+  I("o que é o agravo?", "Agravo"), I("como funciona o inventário?", "inventário"),
+  I("que artigo trata das acções de honorários?", "76"),
   // --- Temas sem aula carregada: a Ngola NÃO pode fingir que sabe ---
   S("o que é um credito pessoal?"), S("qual a taxa maxima de juros permitida no mercado angolano?"),
   S("o que é uma taxa de esforço?"), S("quantos tipos de credito existe, quais as modalidades no nosso mercado?"),
@@ -60,6 +65,7 @@ const OURO = [
 
 function avaliarOuro(c, r) {
   const e = c.esp;
+  if (e.indiceTermo) return { ok: r.tipo === "indice" && r.indice.some(a => a.t.toLowerCase().includes(e.indiceTermo.toLowerCase())), obs: r.tipo + (r.indice ? " · " + r.indice[0].t.slice(0, 45) : "") };
   if (e.area) return { ok: r.tipo === "semconteudo" && r.areas.some(a => a.id === e.area), obs: r.tipo + (r.areas ? " · " + r.areas.map(a => a.id).join("/") : "") };
   if (e.naoConteudo) return { ok: r.tipo !== "conteudo", obs: r.tipo };
   if (e.locs) {

@@ -1,5 +1,5 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).dados = 12;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).dados = 13;
 const DADOS = {
   poupar: ["como poupar dinheiro","quero guardar dinheiro todos os meses","como juntar kwanzas","dicas para economizar","quero fazer uma reserva de emergencia","como gastar menos e guardar mais","quanto devo guardar do meu salario","ajuda-me a poupar para comprar um carro","quero poupar","preciso de poupar mais","como criar o habito de poupar","poupanca mensal","guardar dinheiro para o futuro"],
   cambio: ["qual o cambio do dolar hoje","quanto vale o euro em kwanzas","como trocar kwanzas por dolares","o kwanza esta a desvalorizar","onde comprar dolares","taxa de cambio do banco","converter dolares para kz","diferenca entre cambio oficial e paralelo","quanto custa o dolar","preco do dolar hoje","quanto esta o euro","o dolar sobe ou desce","valor do dolar no mercado"],

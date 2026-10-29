@@ -1,9 +1,9 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).app = 12;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).app = 13;
 
 // Verifica se todos os ficheiros são da mesma versão. Se não forem, avisa em vez de falhar em silêncio.
 (function verificarVersoes() {
-  const ESPERADA = 12, VV = globalThis.NGOLA_V || {};
+  const ESPERADA = 13, VV = globalThis.NGOLA_V || {};
   const falta = ["dados", "ngola", "areas", "biblioteca", "roteador", "app"].filter(k => VV[k] !== ESPERADA);
   const aviso = document.querySelector(".aviso");
   if (!falta.length) { if (aviso) aviso.textContent += " · versão " + ESPERADA; return; }

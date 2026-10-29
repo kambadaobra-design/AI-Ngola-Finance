@@ -1,5 +1,5 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).roteador = 12;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).roteador = 13;
 // Decide COMO a Ngola responde. É usado pelo site (app.js) e pelo teste (teste.html): o mesmo código, os mesmos resultados.
 const LIMITE = 0.3;
 
@@ -11,6 +11,8 @@ function rotear(pergunta) {
   const achados = biblioteca.pesquisar(pergunta, 3, ["banca", "programacao"].includes(intencao) ? 0.4 : intencao === "outro" ? 0.8 : 0);
   const conteudo = achados.filter(a => !a.idx), indice = achados.filter(a => a.idx);
   const geral = entendeu ? RESPOSTAS[intencao] : "";
+  // se o melhor resultado é uma linha de índice, só cede o lugar a um trecho com texto que seja quase tão relevante (>= 75%)
+  if (achados.length && achados[0].idx && indice.length && !(conteudo.length && conteudo[0].score >= 0.75 * achados[0].score)) return { tipo: "indice", intencao, confianca, indice, geral, achados };
   if (conteudo.length) return { tipo: "conteudo", intencao, confianca, conteudo, achados };
   if (indice.length) return { tipo: "indice", intencao, confianca, indice, geral, achados };
 

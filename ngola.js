@@ -1,10 +1,15 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).ngola = 12;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).ngola = 13;
 const STOP = new Set(["qual","quais","de","do","da","dos","das","um","uma","em","no","na","para","por","com","que","eu","me","meu","minha","se","ao","como","quanto","quero","preciso","sao","posso","tenho","ele","ela"]);
 
-function reduzir(p) {
-  if (p.length > 4 && p.endsWith("es")) return p.slice(0, -2); // dolares -> dolar
-  if (p.length > 3 && p.endsWith("s")) return p.slice(0, -1);  // kwanzas -> kwanza
+function reduzir(p) {                       // singular/plural: acções -> accao, variáveis -> variavel, gerais -> geral, bancos -> banco
+  if (p.length > 4) {
+    if (p.endsWith("oes") || p.endsWith("aes")) return p.slice(0, -3) + "ao";
+    if (p.endsWith("ais")) return p.slice(0, -3) + "al";
+    if (p.endsWith("eis")) return p.slice(0, -3) + "el";
+    if (p.endsWith("es")) return p.slice(0, -2);
+  }
+  if (p.length > 3 && p.endsWith("s")) return p.slice(0, -1);
   return p;
 }
 

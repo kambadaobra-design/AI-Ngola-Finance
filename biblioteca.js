@@ -1,6 +1,59 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).biblioteca = 12;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).biblioteca = 13;
 // Biblioteca da Ngola: trechos de livros + fichas verificadas, pesquisa BM25
+
+// Fórmulas LaTeX -> símbolos legíveis (sem bibliotecas de terceiros). Só para mostrar; a pesquisa usa o texto original.
+const _SIMB = { alpha:"α", beta:"β", gamma:"γ", delta:"δ", Delta:"Δ", theta:"θ", pi:"π", sigma:"σ", Sigma:"Σ", mu:"μ", lambda:"λ", rho:"ρ", omega:"ω", epsilon:"ε",
+  cdot:"·", times:"×", div:"÷", pm:"±", approx:"≈", equiv:"≡", ge:"≥", geq:"≥", le:"≤", leq:"≤", neq:"≠", infty:"∞", rightarrow:"→", to:"→", dots:"…", ldots:"…",
+  sum:"Σ", prod:"Π", int:"∫", ln:"ln", log:"log", max:"max", min:"min", vert:"|", left:"", right:"", quad:" ", qquad:"  " };
+const _SUP = { "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","+":"⁺","-":"⁻","=":"⁼","(":"⁽",")":"⁾","n":"ⁿ","i":"ⁱ" };
+const _SUB = { "0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉","+":"₊","-":"₋","=":"₌","(":"₍",")":"₎","a":"ₐ","e":"ₑ","h":"ₕ","i":"ᵢ","j":"ⱼ","k":"ₖ","l":"ₗ","m":"ₘ","n":"ₙ","o":"ₒ","p":"ₚ","r":"ᵣ","s":"ₛ","t":"ₜ","u":"ᵤ","v":"ᵥ","x":"ₓ" };
+
+function _grupo(s, i) {                       // s[i] === "{": devolve [conteúdo, índice a seguir ao "}"]
+  let prof = 0;
+  for (let j = i; j < s.length; j++) { if (s[j] === "{") prof++; else if (s[j] === "}" && --prof === 0) return [s.slice(i + 1, j), j + 1]; }
+  return [s.slice(i + 1), s.length];
+}
+function _marca(txt, mapa, pref) {            // converte para sobrescrito/subscrito Unicode, ou usa ^(…) / _(…)
+  return [...txt].every(c => mapa[c]) ? [...txt].map(c => mapa[c]).join("") : (txt.length === 1 ? pref + txt : pref + "(" + txt + ")");
+}
+
+function latexParaTexto(s) {
+  if (!/\\[A-Za-z]/.test(s)) return s;
+  s = s.replace(/\\\\+/g, "\\");              // \\frac -> \frac
+  const conv = (t) => {
+    let out = "";
+    for (let i = 0; i < t.length; ) {
+      const c = t[i];
+      if (c === "\\") {
+        const m = t.slice(i + 1).match(/^[A-Za-z]+/);
+        if (!m) { const n = t[i + 1]; out += (n === "," || n === ";" || n === "!" || n === " ") ? " " : (n || ""); i += 2; continue; }
+        const nome = m[0]; i += 1 + nome.length;
+        if (nome === "frac" && t[i] === "{") {
+          const [a, i2] = _grupo(t, i); const [b, i3] = t[i2] === "{" ? _grupo(t, i2) : ["", i2]; i = i3;
+          const A = conv(a), B = conv(b), simples = x => /^[\w.,·()ˆ̂]+$/.test(x) || x.length <= 2;
+          out += (simples(A) ? A : "(" + A + ")") + "/" + (simples(B) ? B : "(" + B + ")"); continue;
+        }
+        if (["text", "mathrm", "textbf", "mathbf", "operatorname"].includes(nome) && t[i] === "{") { const [a, i2] = _grupo(t, i); out += conv(a); i = i2; continue; }
+        if (nome === "hat" && t[i] === "{") { const [a, i2] = _grupo(t, i); out += conv(a) + "\u0302"; i = i2; continue; }
+        if (nome === "bar" && t[i] === "{") { const [a, i2] = _grupo(t, i); out += conv(a) + "\u0304"; i = i2; continue; }
+        if (nome === "sqrt" && t[i] === "{") { const [a, i2] = _grupo(t, i); out += "√(" + conv(a) + ")"; i = i2; continue; }
+        out += (nome in _SIMB) ? _SIMB[nome] : nome; continue;
+      }
+      if ((c === "^" || c === "_") && i + 1 < t.length) {
+        let arg, j;
+        if (t[i + 1] === "{") { [arg, j] = _grupo(t, i + 1); } else { arg = t[i + 1]; j = i + 2; }
+        out += _marca(conv(arg), c === "^" ? _SUP : _SUB, c); i = j; continue;
+      }
+      if (c === "{" && t.slice(i, i + 3) === "{,}") { out += ","; i += 3; continue; }
+      if (c === "{" || c === "}" || c === "$") { i++; continue; }
+      out += c; i++;
+    }
+    return out;
+  };
+  return conv(s).replace(/[ \t]{2,}/g, " ");
+}
+
 const biblioteca = {
   trechos: [], tf: [], len: [], df: {}, avg: 1,
   versoes: {},          // livro -> versão atual
@@ -14,7 +67,7 @@ const biblioteca = {
         if (!r.ok) continue;
         const d = await r.json();
         for (const t of d.trechos) {
-          this.trechos.push({ tipo: "trecho", id: t.id, livro: t.livro, area: d.area, v: t.v, p: t.p, loc: t.loc, cod: t.cod, idx: t.idx, prog: t.prog, pais: t.pais, t: t.t });
+          this.trechos.push({ tipo: "trecho", id: t.id, livro: t.livro, area: d.area, v: t.v, p: t.p, loc: t.loc, cod: t.cod, idx: t.idx, prog: t.prog, pais: t.pais, t: t.t, busca: t.idx ? t.t + " " + t.livro : undefined });
           if (t.v) this.versoes[t.livro] = t.v;
         }
       }
@@ -83,7 +136,7 @@ const biblioteca = {
     // Só responde se o melhor trecho for mesmo relevante (calibrado com perguntas reais)
     const r0 = res[0];
     const forte = r0.achou >= 2 ? (r0.cobertura > 0.5 && (todas.length < 2 || r0.adj > 0)) : (todas.length === 1 && r0.score >= 6);
-    const fraco = minCob > 0 && r0.cobertura >= minCob && r0.score >= 4.5; // banca/programação: 0.4 · fora do assunto: 0.8
+    const fraco = minCob > 0 && r0.cobertura >= minCob && r0.score >= 4.5 && (todas.length !== 2 || r0.achou < 2 || r0.adj > 0); // perguntas de 2 palavras: têm de aparecer seguidas // banca/programação: 0.4 · fora do assunto: 0.8
     if (!forte && !fraco) return [];
     const fichasTrechos = new Set(res.filter(r => r.tipo === "ficha" && r.trecho_id).map(r => r.trecho_id));
     return res.filter(r => r.score >= res[0].score * 0.6 && !fichasTrechos.has(r.id)).slice(0, k);
@@ -101,7 +154,7 @@ const biblioteca = {
     const partes = achados.map((a, i) => {
       const tem = a.t.includes("```");
       const max = tem ? 1600 : 650;
-      let t = a.t;
+      let t = a.t.split("```").map((p, k) => k % 2 ? p : latexParaTexto(p)).join("```");
       if (t.length > max) { t = t.slice(0, max).replace(/\s\S*$/, "") + "…"; if ((t.match(/```/g) || []).length % 2) t += "\n```"; }
       const onde = a.loc || ("pág. " + a.p);
       let fonte = a.tipo === "ficha" ? `✔ verificado · ${a.livro}, ${onde}` : `📖 ${a.livro}, ${onde}`;
@@ -137,7 +190,7 @@ const biblioteca = {
 
   // Quando só há títulos do índice do curso (sem conteúdo)
   formatarIndice(achados) {
-    const linhas = achados.slice(0, 3).map(a => `• ${a.t.replace(/^-\s*/, "")} (${a.livro.split(" (")[0]})`);
-    return "No índice do meu curso há aulas sobre isto, mas ainda não tenho o conteúdo delas:\n" + linhas.join("\n");
+    const linhas = achados.slice(0, 4).map(a => `• ${a.t.replace(/^-\s*/, "")} [${a.livro.split(" (")[0]}]`);
+    return "Só tenho o índice (títulos e números, sem o texto) sobre isto:\n" + linhas.join("\n");
   },
 };
