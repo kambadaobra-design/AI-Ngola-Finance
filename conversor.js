@@ -5,7 +5,9 @@ const Conv = (() => {
   const INICIO = /^(def |class |import |from \S+ import |@\w|for .+ in .+:|while .+:|if .+:|try:|with .+:|print\(|if __name__|#|[a-z_]\w*(\.\w+)*\s*(=|\+=|-=)\s*\S|[a-z_]\w*(\.\w+)*\(.*\)?$)/;
   const CODE_UP = /^([A-Z]\w*(\.\w+)*\s*(\(|=|\[|\.)|True\b|False\b|None\b)/;
   const EMOJI = /^[^\p{L}\p{N}_\s#@"'(\[{)\-]/u;
-  const AULA = /^[^\wÀ-ú]*Aula\s+(\d+)\b\s*[:\-–—.]/;
+  const AULA = /^[^\wÀ-ú]*Aula\s+(?:N\s*[:.º°]?\s*)?(\d+)\b\s*[:\-–—.]/i;
+  // restos de copiar de um assistente de IA ("Copilot said:", "Mostrar mais linhas"…)
+  const limparColagem = t => t.replace(/(^|\n)[ \t]*(?:Copilot|ChatGPT|Gemini|Claude|You|Você)\s+(?:said|disse)\s*:?[ \t]*/gi, "$1").replace(/\n[ \t]*(?:Mostrar mais linhas|Show more|Plain Text)[ \t]*(?=\n|$)/gi, "");
   const BOX = /[─│┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬]+/g;
   const slug = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
 
@@ -177,6 +179,7 @@ const Conv = (() => {
 
   // texto -> trechos. opcoes: {livro, versao, python}
   function converter(texto, { livro, versao, python, pais }) {
+    texto = limparColagem(texto);
     const stats = { ok: 0, rec: 0, bad: 0 };
     const topo = texto.trim().split("\n").slice(0, 3).join(" ");
     const m = topo.match(/\bAulas?\s+(\d+)(?:\s*(?:e|a|-)\s*(\d+))?/);
@@ -186,10 +189,10 @@ const Conv = (() => {
   }
 
   // junta aos trechos existentes: aulas com a mesma etiqueta são substituídas (inclui as linhas de índice)
-  function juntar(existente, novos, area, livro) {
+  function juntar(existente, novos, area, livro, substituir = false) {
     const ex = existente ? existente.trechos : [];
     const locs = new Set(novos.map(t => t.loc).filter(l => l && !l.startsWith("parte")));
-    const manter = ex.filter(t => !(t.livro === livro && locs.has(t.loc)));
+    const manter = ex.filter(t => !(t.livro === livro && (substituir || locs.has(t.loc))));
     const removidos = ex.length - manter.length;
     let p = Math.max(0, ...manter.filter(t => t.livro === livro).map(t => t.p || 0));
     const stamp = Date.now().toString(36), base = slug(livro) + "-v" + slug(novos[0] ? novos[0].v : "x");
@@ -213,6 +216,7 @@ const Conv = (() => {
     return [[cab, ...k.slice(1)].join(" "), ...resto.map(frase)].join(" — ");
   };
   function converterIndice(texto, { livro, versao, pais, loc }) {
+    texto = limparColagem(texto);
     const entradas = []; let pilha = [], ultimo = null, buf = [];
     const limpaLinha = l => l.replace(BOX, " ").replace(/\u200b/g, "").replace(/\s+$/, "").trim();
     for (const bruta of texto.split("\n")) {
@@ -249,6 +253,6 @@ const Conv = (() => {
     return { trechos: trechos.map(t => ({ ...t, livro, v: versao, ...(pais ? { pais } : {}) })), stats: { ok: 0, rec: 0, bad: 0 } };
   }
 
-  return { converter, converterIndice, juntar, slug, aberto };
+  return { converter, converterIndice, juntar, slug, aberto, limparColagem };
 })();
 if (typeof module !== "undefined") module.exports = Conv;

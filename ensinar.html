@@ -28,6 +28,7 @@ ol{padding-left:20px;font-size:14px}
   <div class="nota" id="fontes"></div>
   <div id="outra" style="display:none"><label>Nome da área (letras minúsculas e _)</label><input id="outranome" placeholder="ex: seguros"></div>
   <label><input type="checkbox" id="py" style="width:auto"> O texto tem código Python (reparar o recuo)</label>
+  <label><input type="checkbox" id="substituir" style="width:auto"> Substituir <b>tudo</b> o que já existe deste livro (usa para repetir uma colagem sem ficar com duplicados)</label>
   <label><input type="checkbox" id="indice" style="width:auto"> É um <b>índice</b> (títulos e números de página/artigo, sem o texto)</label>
   <div class="card" style="margin:10px 0">
     <b>📷 Ler fotografias</b> <span class="nota">(OCR no teu navegador, sem enviar nada para fora)</span>
@@ -66,6 +67,7 @@ function baixar(nome, obj) {
 }
 async function lerJson(url) { try { const r = await fetch(url + "?t=" + Date.now()); return r.ok ? await r.json() : null; } catch (e) { return null; } }
 
+const ph = document.createElement("option"); ph.value = ""; ph.textContent = "— escolhe a área —"; $("area").appendChild(ph);
 for (const g of GRUPOS) {                                   // lista de áreas vinda do catálogo (areas.js)
   const og = document.createElement("optgroup"); og.label = g;
   AREAS.filter(x => x.grupo === g && !x.futuro).forEach(x => { const o = document.createElement("option"); o.value = x.id; o.textContent = x.nome; og.appendChild(o); });
@@ -79,12 +81,14 @@ $("area").onchange = () => {
   $("fontes").textContent = ar && ar.fontes ? "Sugestão do que carregar (confirma a versão em vigor): " + ar.fontes : "";
   if (ar && ar.grupo === "Direito" && $("pais").value === "AO") $("pais").value = "AO";
 };
-$("area").value = "direito_contratual"; $("area").onchange();
+$("area").value = ""; $("area").onchange();
 $("versao").value = new Date().toISOString().slice(0, 7);
 (async () => {                                       // sugere os livros que já existem
   const idx = await lerJson("livros/index.json"); if (!idx) return;
   const nomes = new Set();
-  for (const f of idx.ficheiros) { const d = await lerJson("livros/" + f); if (d) d.trechos.forEach(t => nomes.add(t.livro)); }
+  window.livroArea = {};
+  for (const f of idx.ficheiros) { const d = await lerJson("livros/" + f); if (d) d.trechos.forEach(t => { nomes.add(t.livro); (window.livroArea[t.livro] = window.livroArea[t.livro] || new Set()).add(d.area); }); }
+  window.livroArea = window.livroArea || {};
   nomes.forEach(n => { const o = document.createElement("option"); o.value = n; $("livros").appendChild(o); });
 })();
 
@@ -122,17 +126,20 @@ $("ocrLer").onclick = async () => {
 $("conv").onclick = async () => {
   const livro = $("livro").value.trim(), texto = $("texto").value, versao = $("versao").value.trim() || "sem-versao", area = nomeArea();
   const prev = $("prev"); prev.replaceChildren();
+  if (!$("area").value) { prev.appendChild(el("div", "Escolhe primeiro a área do livro (lista acima).", "card mau")); return; }
   if (!livro || texto.trim().length < 30) { prev.appendChild(el("div", "Preenche o nome do livro e cola o texto da aula.", "card mau")); return; }
   const r = $("indice").checked ? Conv.converterIndice(texto, { livro, versao, pais: $("pais").value }) : Conv.converter(texto, { livro, versao, python: $("py").checked, pais: $("pais").value });
   if (!r.trechos.length) { prev.appendChild(el("div", "Não consegui criar trechos a partir deste texto.", "card mau")); return; }
   const existente = await lerJson("livros/" + area + ".json");
-  const j = Conv.juntar(existente, r.trechos, area, livro);
+  const j = Conv.juntar(existente, r.trechos, area, livro, $("substituir").checked);
   resultado = { area, dados: j.dados };
 
   const c = el("div", undefined, "card"); prev.appendChild(c);
   c.appendChild(el("div", `✔ ${r.trechos.length} trechos criados`, "ok"));
   c.appendChild(el("div", j.locs.length ? "Aulas identificadas: " + j.locs.join(", ") : "Não encontrei títulos do tipo \"Aula N:\"; os trechos ficam como \"parte N\".", "nota"));
   if (j.removidos) c.appendChild(el("div", `↻ ${j.removidos} trechos antigos das mesmas aulas serão substituídos (inclui linhas de índice).`, "nota"));
+  const outras = [...((window.livroArea || {})[livro] || [])].filter(x => x !== area);
+  if (outras.length) c.appendChild(el("div", `⚠ Já existe «${livro}» noutra área (${outras.join(", ")}). Vais gravá-lo também em ${area}: se foi engano, apaga o outro ficheiro no GitHub.`, "av"));
   if (!existente) c.appendChild(el("div", `Ficheiro novo: livros/${area}.json`, "nota"));
   const s = r.stats;
   if (s.ok + s.rec + s.bad) {

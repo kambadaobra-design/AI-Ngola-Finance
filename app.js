@@ -131,6 +131,7 @@ async function perguntar(texto) {
     resposta = (a.n === 0
       ? `Isto parece ser de ${a.nome}${outras ? " (ou " + outras + ")" : ""}, mas ainda não tenho conteúdo dessa área. Podes ensinar-me carregando textos na página Ensinar.`
       : `Tenho ${a.n} trechos de ${a.nome}, mas não encontrei nada que responda a esta pergunta. Tenta usar palavras do tema.`)
+      + (r.mencao ? `\n\n(Encontrei uma menção em «${r.mencao.livro.split(" (")[0]}», ${r.mencao.loc || "pág. " + r.mencao.p}, mas não é a lei nem uma definição.)` : "")
       + (r.geral ? "\n\nResposta geral: " + r.geral : "");
     div = adicionar("ngola", resposta, `🗂 área provável: ${a.nome} · trechos na biblioteca: ${a.n}`);
   } else if (r.tipo === "conteudo") {

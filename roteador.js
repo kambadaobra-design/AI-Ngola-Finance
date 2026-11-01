@@ -13,7 +13,13 @@ function rotear(pergunta) {
   const geral = entendeu ? RESPOSTAS[intencao] : "";
   // se o melhor resultado é uma linha de índice, só cede o lugar a um trecho com texto que seja quase tão relevante (>= 75%)
   if (achados.length && achados[0].idx && indice.length && !(conteudo.length && conteudo[0].score >= 0.75 * achados[0].score)) return { tipo: "indice", intencao, confianca, indice, geral, achados };
-  if (conteudo.length) return { tipo: "conteudo", intencao, confianca, conteudo, achados };
+  if (conteudo.length) {
+    // uma pergunta de Direito (ex: "o que é o IVA?") não se responde com um exemplo de uma aula de finanças que só menciona o termo
+    const d0 = detetarArea(pergunta), grupoTopo = (AREA_POR_ID[conteudo[0].area] || {}).grupo;
+    if (d0.length && d0[0].grupo === "Direito" && grupoTopo && grupoTopo !== "Direito")
+      return { tipo: "semconteudo", intencao, confianca, geral: "", mencao: conteudo[0], areas: d0.map(d => ({ ...d, n: biblioteca.contagem(d.id) })), achados };
+    return { tipo: "conteudo", intencao, confianca, conteudo, achados };
+  }
   if (indice.length) return { tipo: "indice", intencao, confianca, indice, geral, achados };
 
   // Sem conteúdo na biblioteca: de que área é a pergunta? (só se não houver já uma resposta geral confiante)
