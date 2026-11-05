@@ -36,7 +36,8 @@ ol{padding-left:20px;font-size:14px}
     <input type="file" id="fotos" accept="image/*" multiple style="margin-top:8px">
     <div class="lin" style="grid-template-columns:1fr 1fr">
       <div><label>Rotação da fotografia</label><select id="rot"><option value="auto">Detetar sozinho (0° ou 180°)</option><option value="0">0° (direita)</option><option value="180">180° (de pernas para o ar)</option><option value="90">90° para a direita</option><option value="270">90° para a esquerda</option></select></div>
-      <div><label><input type="checkbox" id="dividir" style="width:auto"> A foto tem duas páginas (dividir ao meio)</label></div>
+      <div><label>Colunas de texto</label><select id="colunas"><option value="auto">Detetar sozinho (recomendado)</option><option value="1">Uma coluna</option><option value="2">Duas colunas</option></select>
+        <label><input type="checkbox" id="dividir" style="width:auto"> A foto tem duas páginas (dividir ao meio)</label></div>
     </div>
     <button id="ocrLer" class="sec">Ler fotografias → texto</button> <button id="ocrTeste" class="sec">Testar o OCR</button>
     <div id="ocrProg" class="nota"></div>
@@ -55,7 +56,7 @@ ol{padding-left:20px;font-size:14px}
 </div>
 
 <script src="areas.js?v=13"></script>
-<script src="ocr.js?v=13.2"></script>
+<script src="ocr.js?v=13.3"></script>
 <script src="conversor.js?v=13"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -113,9 +114,9 @@ $("ocrLer").onclick = async () => {
       const rot = $("rot").value === "auto" ? await Ocr.detetarRotacao(f, prog) : +$("rot").value;
       const paginas = await Ocr.preparar(f, { rot, dividir: $("dividir").checked });
       for (let i = 0; i < paginas.length; i++) {
-        const r = await Ocr.ler(paginas[i], prog);
+        const r = await Ocr.lerPagina(paginas[i], $("colunas").value, prog);
         acumulado += "\n" + Ocr.limpar(r.texto) + "\n";
-        relatorio.push(`${f.name}${paginas.length > 1 ? " (parte " + (i + 1) + ")" : ""}: rodada ${rot}°, confiança ${Math.round(r.confianca)}%`);
+        relatorio.push(`${f.name}${paginas.length > 1 ? " (parte " + (i + 1) + ")" : ""}: rodada ${rot}°, ${r.colunas} coluna(s), confiança ${Math.round(r.confianca)}%`);
       }
     }
     $("texto").value = (($("texto").value ? $("texto").value + "\n" : "") + acumulado).trim();
