@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-AO"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ngola · Calculadoras</title>
+<style>
+:root{--bg:#faf9f5;--card:#fff;--text:#3d3929;--muted:#83827d;--line:#e8e6dc;--acc:#d97757;--ok:#2e7d32;--mau:#c62828}
+@media(prefers-color-scheme:dark){:root{--bg:#262624;--card:#30302e;--text:#e8e6dc;--muted:#9c9a92;--line:#434341;--ok:#66bb6a;--mau:#ef5350}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:18px;line-height:1.5}
+.w{max-width:980px;margin:0 auto}h1{font-family:Georgia,serif;font-weight:400;margin:0 0 4px}.nota{color:var(--muted);font-size:13px}
+a{color:var(--acc)}.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.tabs button{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:14px}
+.tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.grid{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:16px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 3px}input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;font-size:15px}
+.cartoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.cartao{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.cartao b{display:block;font-size:12px;color:var(--muted);font-weight:400}.cartao span{font-size:20px;font-family:Georgia,serif}
+.erro{color:var(--mau)}.notas div{font-size:13px;color:var(--muted);margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}
+svg{width:100%;height:auto}.eixo{stroke:var(--line)}.txt{fill:var(--muted);font-size:11px}.s0{stroke:var(--acc)}.s1{stroke:var(--ok)}.s2{stroke:var(--muted)}.l0{fill:var(--acc)}.l1{fill:var(--ok)}.l2{fill:var(--muted)}
+button.sec{background:none;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer;font-size:13px}
+</style></head><body><div class="w">
+<h1>Calculadoras da Ngola</h1>
+<div class="nota">Simuladores feitos com fórmulas (não com palpites), a funcionar no teu navegador e sem enviar nada para fora. Valores ilustrativos: confirma sempre com o banco, o contabilista ou a lei em vigor. · <a href="index.html">← voltar à Ngola</a></div>
+<div class="tabs" id="tabs"></div>
+<div class="grid"><div class="card"><div id="form"></div></div><div><div class="card" id="res"></div><div class="card" id="graf" style="display:none"></div><div class="card" id="tab" style="display:none"></div></div></div>
+
+<script src="calculos.js?v=14"></script>
+<script>
+const $ = id => document.getElementById(id), F = Calc.fmt, FP = Calc.fmtP;
+const num = s => { s = String(s).trim(); if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) return parseFloat(s.replace(/\./g, "").replace(",", ".")); if (/^\d{1,3}(\s\d{3})+(,\d+)?$/.test(s)) return parseFloat(s.replace(/\s/g, "").replace(",", ".")); return parseFloat(s.replace(",", ".")); };
+const abrev = v => { const a = Math.abs(v); return a >= 1e9 ? F(v / 1e9, 1) + " mM" : a >= 1e6 ? F(v / 1e6, 1) + " M" : a >= 1e4 ? F(v / 1e3, 0) + " mil" : F(v, 0); };
+const NS = "http://www.w3.org/2000/svg";
+const sv = (t, at, tx) => { const e = document.createElementNS(NS, t); for (const k in at) e.setAttribute(k, at[k]); if (tx !== undefined) e.textContent = tx; return e; };
+const el = (t, tx, cl) => { const e = document.createElement(t); if (tx !== undefined) e.textContent = tx; if (cl) e.className = cl; return e; };
+
+// ---------- gráfico de linhas desenhado à mão (SVG, sem bibliotecas) ----------
+function grafico(series, titulo, xTitulo) {
+  const W = 640, H = 270, m = { l: 66, r: 14, t: 34, b: 34 }, n = Math.max(...series.map(s => s.y.length));
+  const todos = series.flatMap(s => s.y), lo = Math.min(0, ...todos); let hi = Math.max(...todos); if (hi === lo) hi = lo + 1;
+  const X = k => m.l + (W - m.l - m.r) * (n <= 1 ? 0 : k / (n - 1)), Y = v => H - m.b - (H - m.t - m.b) * (v - lo) / (hi - lo);
+  const s = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": titulo });
+  s.appendChild(sv("text", { x: m.l, y: 16, class: "txt", "font-weight": "600" }, titulo));
+  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v); s.appendChild(sv("line", { x1: m.l, x2: W - m.r, y1: y, y2: y, class: "eixo" })); s.appendChild(sv("text", { x: m.l - 6, y: y + 4, class: "txt", "text-anchor": "end" }, abrev(v))); }
+  [0, Math.floor((n - 1) / 2), n - 1].forEach(k => s.appendChild(sv("text", { x: X(k), y: H - 12, class: "txt", "text-anchor": "middle" }, String(k + (series[0].inicio ?? 0)))));
+  if (xTitulo) s.appendChild(sv("text", { x: W - m.r, y: H - 1, class: "txt", "text-anchor": "end" }, xTitulo));
+  series.forEach((se, j) => {
+    s.appendChild(sv("polyline", { fill: "none", "stroke-width": 2.4, class: "s" + j, points: se.y.map((v, k) => `${X(k).toFixed(1)},${Y(v).toFixed(1)}`).join(" ") }));
+    s.appendChild(sv("rect", { x: W - m.r - 170, y: 6 + j * 14, width: 10, height: 3, class: "l" + j })); s.appendChild(sv("text", { x: W - m.r - 156, y: 11 + j * 14, class: "txt" }, se.nome));
+  });
+  return s;
+}
+
+// ---------- definição das calculadoras ----------
+const sel = (id, rotulo, def, opc) => ({ id, rotulo, def, tipo: "sel", opc });
+const TABS = [
+  { id: "credito", nome: "Crédito", campos: [
+      { id: "valor", rotulo: "Valor do crédito (Kz)", def: "5.000.000" }, { id: "taxa", rotulo: "Taxa de juro (%)", def: "2" },
+      sel("per", "A taxa é", "mes", [["mes", "ao mês"], ["ano", "ao ano"]]), { id: "prazo", rotulo: "Prazo", def: "24" },
+      sel("un", "Unidade do prazo", "meses", [["meses", "meses"], ["anos", "anos"]]), sel("sis", "Sistema de amortização", "price", [["price", "Price (prestações iguais)"], ["sac", "SAC (amortização constante)"]])],
+    calcular(v) {
+      const P = num(v.valor), n = Math.round(num(v.prazo) * (v.un === "anos" ? 12 : 1)), t = num(v.taxa) / 100;
+      if (!(P > 0) || !(n >= 1) || n > 600 || !(t >= 0)) return { erro: "Preenche o valor, o prazo (até 600 meses) e a taxa." };
+      const i = v.per === "ano" ? Math.pow(1 + t, 1 / 12) - 1 : t, T = (v.sis === "sac" ? Calc.tabelaSAC : Calc.tabelaPrice)(P, i, n), tot = T.reduce((a, r) => a + r.prestacao, 0);
+      let ja = 0; const jur = T.map(r => (ja += r.juros));
+      return { cartoes: [[v.sis === "sac" ? "1.ª prestação" : "Prestação mensal", F(T[0].prestacao) + " Kz"], v.sis === "sac" ? ["Última prestação", F(T[n - 1].prestacao) + " Kz"] : ["Juros na 1.ª prestação", F(T[0].juros) + " Kz"], ["Total a pagar", F(tot) + " Kz"], ["Juros totais", F(tot - P) + " Kz"], ["Taxa mensal equivalente", FP(i, 4)]],
+        notas: [v.per === "ano" ? `Taxa anual de ${FP(t)} convertida na taxa mensal equivalente ${FP(i, 4)}. Se o banco usar a taxa nominal (${FP(t / 12, 4)} ao mês), a prestação Price seria ${F(Calc.pmt(P, t / 12, n))} Kz.` : "", "Não inclui comissões, seguros nem impostos."].filter(Boolean),
+        series: [{ nome: "Saldo devedor", y: [P, ...T.map(r => r.saldo)] }, { nome: "Juros pagos (acumulado)", y: [0, ...jur] }], titulo: "Saldo devedor e juros pagos", xTitulo: "meses",
+        tabela: { cab: ["Mês", "Prestação", "Juros", "Amortização", "Saldo"], linhas: T.map(r => [r.k, F(r.prestacao), F(r.juros), F(r.amort), F(r.saldo)]) } };
+    } },
+  { id: "poupanca", nome: "Poupança", campos: [
+      sel("modo", "O que queres saber?", "juntar", [["juntar", "Quanto vou juntar"], ["meta", "Quanto poupar por mês para uma meta"]]),
+      { id: "mensal", rotulo: "Poupança por mês (Kz)", def: "50.000" }, { id: "meta", rotulo: "Meta (Kz)", def: "2.000.000" },
+      { id: "prazo", rotulo: "Prazo (meses)", def: "24" }, { id: "taxa", rotulo: "Taxa de juro ao ano (%)", def: "10" }],
+    calcular(v) {
+      const n = Math.round(num(v.prazo)), t = num(v.taxa) / 100; if (!(n >= 1) || n > 720 || !(t >= 0)) return { erro: "Preenche o prazo (em meses) e a taxa." };
+      const i = Math.pow(1 + t, 1 / 12) - 1; let p;
+      if (v.modo === "meta") { const M = num(v.meta); if (!(M > 0)) return { erro: "Indica a meta." }; p = Calc.pmtMeta(M, i, n); } else { p = num(v.mensal); if (!(p > 0)) return { erro: "Indica quanto poupas por mês." }; }
+      let s = 0; const ac = [0], dep = [0]; for (let k = 1; k <= n; k++) { s = s * (1 + i) + p; ac.push(s); dep.push(p * k); }
+      return { cartoes: [["Poupança por mês", F(p) + " Kz"], ["Valor acumulado", F(s) + " Kz"], ["Total depositado", F(p * n) + " Kz"], ["Juros ganhos", F(s - p * n) + " Kz"]],
+        notas: [`Taxa anual de ${FP(t)} convertida em ${FP(i, 4)} ao mês, com depósitos no fim de cada mês.`], series: [{ nome: "Valor acumulado", y: ac }, { nome: "Total depositado", y: dep }], titulo: "Evolução da poupança", xTitulo: "meses" };
+    } },
+  { id: "juros", nome: "Juros", campos: [
+      { id: "cap", rotulo: "Capital (Kz)", def: "1.000.000" }, { id: "taxa", rotulo: "Taxa (%)", def: "12" }, sel("per", "A taxa é", "ano", [["ano", "ao ano"], ["mes", "ao mês"]]),
+      { id: "anos", rotulo: "Prazo (anos)", def: "3" }, sel("tipo", "Tipo de juros", "comp", [["comp", "Compostos"], ["simp", "Simples"]])],
+    calcular(v) {
+      const C = num(v.cap), t = num(v.taxa) / 100, A = num(v.anos); if (!(C > 0) || !(t >= 0) || !(A > 0) || A > 100) return { erro: "Preenche capital, taxa e prazo (até 100 anos)." };
+      const pa = v.per === "mes" ? 12 : 1, N = A * pa, M = v.tipo === "comp" ? Calc.montante(C, t, N) : Calc.jurosSimples(C, t, N).montante, alt = v.tipo === "comp" ? Calc.jurosSimples(C, t, N).montante : Calc.montante(C, t, N);
+      const pts = Math.max(1, Math.ceil(A)), cs = [], ss = []; for (let k = 0; k <= pts; k++) { const nn = Math.min(A, k) * pa; cs.push(Calc.montante(C, t, nn)); ss.push(Calc.jurosSimples(C, t, nn).montante); }
+      return { cartoes: [["Montante final", F(M) + " Kz"], ["Juros", F(M - C) + " Kz"], [v.tipo === "comp" ? "Com juros simples seria" : "Com juros compostos seria", F(alt) + " Kz"]], notas: ["Sem novos depósitos nem impostos."],
+        series: [{ nome: "Juros compostos", y: cs }, { nome: "Juros simples", y: ss }], titulo: "Crescimento do capital", xTitulo: "anos" };
+    } },
+  { id: "projeto", nome: "Projeto (VPL/TIR)", campos: [
+      { id: "inv", rotulo: "Investimento inicial (Kz)", def: "1.000.000" }, { id: "taxa", rotulo: "Taxa de desconto ao ano (%)", def: "10" },
+      { id: "fluxos", rotulo: "Fluxos de cada ano (separados por ;)", def: "400.000; 500.000; 600.000" }],
+    calcular(v) {
+      const I = num(v.inv), t = num(v.taxa) / 100, F0 = String(v.fluxos).split(/[;\n]+/).map(s => s.trim()).filter(Boolean).map(num);
+      if (!(I > 0) || !F0.length || F0.some(x => !isFinite(x)) || !isFinite(t)) return { erro: "Indica o investimento, a taxa e os fluxos (separados por ponto e vírgula)." };
+      const f = [-I, ...F0], vp = Calc.vpl(t, f), r = Calc.tir(f), pb = Calc.payback(f, 0), pd = Calc.payback(f, t);
+      let a = 0, b = 0; const c1 = [], c2 = []; f.forEach((x, k) => { a += x; b += x / Math.pow(1 + t, k); c1.push(a); c2.push(b); });
+      return { cartoes: [["VPL", F(vp) + " Kz"], ["TIR", r == null ? "não existe" : FP(r)], ["Payback simples", pb == null ? "não recupera" : F(pb, 2) + " anos"], ["Payback descontado", pd == null ? "não recupera" : F(pd, 2) + " anos"]],
+        notas: [vp > 0 ? "VPL positivo: o projeto cria valor à taxa pedida." : "VPL negativo: à taxa pedida o projeto não compensa.", "Fluxos recebidos no fim de cada ano; investimento no ano 0."],
+        series: [{ nome: "Fluxo acumulado", y: c1 }, { nome: "Fluxo acumulado descontado", y: c2 }], titulo: "Recuperação do investimento", xTitulo: "anos" };
+    } },
+  { id: "cambio", nome: "Câmbio", campos: [
+      { id: "valor", rotulo: "Valor", def: "500" }, { id: "taxa", rotulo: "Câmbio do dia (Kz por 1 unidade estrangeira)", def: "900" },
+      sel("dir", "Converter", "paraKz", [["paraKz", "Moeda estrangeira → Kz"], ["deKz", "Kz → moeda estrangeira"]])],
+    calcular(v) { const x = num(v.valor), c = num(v.taxa); if (!(x >= 0) || !(c > 0)) return { erro: "Preenche o valor e o câmbio." }; const r = v.dir === "paraKz" ? x * c : x / c;
+      return { cartoes: [["Resultado", F(r) + (v.dir === "paraKz" ? " Kz" : " (moeda estrangeira)")]], notas: ["Usa o câmbio que indicares: a Ngola não inventa cotações. O câmbio real depende do banco e do dia (oficial ou paralelo)."] }; } },
+  { id: "iva", nome: "IVA", campos: [
+      { id: "valor", rotulo: "Valor (Kz)", def: "100.000" }, { id: "taxa", rotulo: "Taxa de IVA (%)", def: "14" }, sel("tipo", "O valor é", "sem", [["sem", "Sem IVA (base)"], ["com", "Com IVA incluído"]])],
+    calcular(v) { const x = num(v.valor), t = num(v.taxa) / 100; if (!(x >= 0) || !(t >= 0)) return { erro: "Preenche o valor e a taxa." }; const r = Calc.ivaDe(x, t, v.tipo === "com");
+      return { cartoes: [["Base (sem IVA)", F(r.base) + " Kz"], ["IVA", F(r.iva) + " Kz"], ["Total (com IVA)", F(r.total) + " Kz"]], notas: ["Confirma a taxa em vigor e se o bem ou serviço tem isenção."] }; } },
+  { id: "margens", nome: "Margens e equilíbrio", campos: [
+      { id: "custo", rotulo: "Custo unitário (Kz)", def: "800" }, { id: "preco", rotulo: "Preço de venda unitário (Kz)", def: "1.000" },
+      { id: "fixos", rotulo: "Custos fixos do período (Kz, opcional)", def: "500.000" }],
+    calcular(v) {
+      const c = num(v.custo), p = num(v.preco), cf = num(v.fixos); if (!(c >= 0) || !(p > 0)) return { erro: "Preenche o custo e o preço." };
+      const r = Calc.margem(c, p), cart = [["Lucro por unidade", F(r.lucro) + " Kz"], ["Margem sobre a venda", FP(r.sobreVenda)], ["Markup sobre o custo", c > 0 ? FP(r.sobreCusto) : "—"]];
+      if (cf > 0 && p > c) { const q = Calc.equilibrio(cf, p, c); cart.push(["Ponto de equilíbrio", F(q, 1) + " unidades"], ["Receita no equilíbrio", F(q * p) + " Kz"]); }
+      return { cartoes: cart, notas: ["No equilíbrio, o custo variável unitário é o custo unitário indicado.", "Margem sobre a venda e markup não são a mesma coisa."] };
+    } },
+];
+
+// ---------- interface ----------
+let atual = null;
+function valores() { const v = {}; atual.campos.forEach(c => { v[c.id] = $("c_" + c.id).value; }); return v; }
+function desenhar() {
+  const r = atual.calcular(valores()), res = $("res"), g = $("graf"), tb = $("tab"); res.replaceChildren(); g.replaceChildren(); tb.replaceChildren();
+  g.style.display = tb.style.display = "none";
+  if (r.erro) { res.appendChild(el("div", r.erro, "erro")); return; }
+  const cs = el("div", undefined, "cartoes"); r.cartoes.forEach(([t, x]) => { const c = el("div", undefined, "cartao"); c.appendChild(el("b", t)); c.appendChild(el("span", x)); cs.appendChild(c); }); res.appendChild(cs);
+  if (r.notas && r.notas.length) { const n = el("div", undefined, "notas"); r.notas.forEach(t => n.appendChild(el("div", t))); res.appendChild(n); }
+  if (r.series) { g.style.display = ""; g.appendChild(grafico(r.series, r.titulo, r.xTitulo)); }
+  if (r.tabela) {
+    tb.style.display = ""; const T = el("table"), h = el("tr"); r.tabela.cab.forEach(x => h.appendChild(el("th", x))); T.appendChild(h);
+    const mostrar = e => { T.replaceChildren(h); (e ? r.tabela.linhas : r.tabela.linhas.slice(0, 12).concat(r.tabela.linhas.length > 12 ? [r.tabela.linhas[r.tabela.linhas.length - 1]] : [])).forEach(l => { const tr = el("tr"); l.forEach(x => tr.appendChild(el("td", String(x)))); T.appendChild(tr); }); };
+    mostrar(false); tb.appendChild(T);
+    if (r.tabela.linhas.length > 13) { const b = el("button", "Mostrar todas as " + r.tabela.linhas.length + " linhas", "sec"); let abertas = false; b.onclick = () => { abertas = !abertas; mostrar(abertas); b.textContent = abertas ? "Mostrar só o início e o fim" : "Mostrar todas as " + r.tabela.linhas.length + " linhas"; }; tb.appendChild(b); }
+  }
+}
+function abrir(id) {
+  atual = TABS.find(t => t.id === id); [...$("tabs").children].forEach(b => b.className = b.dataset.id === id ? "on" : "");
+  const f = $("form"); f.replaceChildren();
+  atual.campos.forEach(c => {
+    f.appendChild(el("label", c.rotulo)); let i;
+    if (c.tipo === "sel") { i = el("select"); c.opc.forEach(([v, t]) => { const o = el("option", t); o.value = v; i.appendChild(o); }); i.value = c.def; } else { i = el("input"); i.value = c.def; i.inputMode = "decimal"; }
+    i.id = "c_" + c.id; i.addEventListener("input", desenhar); i.addEventListener("change", desenhar); f.appendChild(i);
+  });
+  desenhar();
+}
+TABS.forEach(t => { const b = el("button", t.nome); b.dataset.id = t.id; b.onclick = () => abrir(t.id); $("tabs").appendChild(b); });
+abrir("credito");
+</script></div></body></html>
