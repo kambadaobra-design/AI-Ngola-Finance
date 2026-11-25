@@ -200,6 +200,6 @@ const Ocr = (() => {
       .replace(/\n{3,}/g, "\n\n").trim();
   }
 
-  return { verificar, iniciar, preparar, ler, detetarRotacao, autoteste, limpar, localizar, obrigatorios, detetarColunas, mascarar, limiarOtsu, caixaTexto, lerPagina };
+  return { verificar, iniciar, preparar, ler, detetarRotacao, autoteste, limpar, localizar, obrigatorios, detetarColunas, mascarar, limiarOtsu, caixaTexto, lerPagina, contraste };
 })();
 if (typeof module !== "undefined") module.exports = Ocr;

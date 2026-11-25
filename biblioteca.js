@@ -1,5 +1,5 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).biblioteca = 13;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).biblioteca = 14;
 // Biblioteca da Ngola: trechos de livros + fichas verificadas, pesquisa BM25
 
 // Fórmulas LaTeX -> símbolos legíveis (sem bibliotecas de terceiros). Só para mostrar; a pesquisa usa o texto original.

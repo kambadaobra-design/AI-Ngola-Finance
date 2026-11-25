@@ -1,10 +1,10 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).app = 13;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).app = 14;
 
 // Verifica se todos os ficheiros são da mesma versão. Se não forem, avisa em vez de falhar em silêncio.
 (function verificarVersoes() {
-  const ESPERADA = 13, VV = globalThis.NGOLA_V || {};
-  const falta = ["dados", "ngola", "areas", "biblioteca", "roteador", "app"].filter(k => VV[k] !== ESPERADA);
+  const ESPERADA = 14, VV = globalThis.NGOLA_V || {};
+  const falta = ["dados", "ngola", "areas", "calculos", "biblioteca", "roteador", "app"].filter(k => VV[k] !== ESPERADA);
   const aviso = document.querySelector(".aviso");
   if (!falta.length) { if (aviso) aviso.textContent += " · versão " + ESPERADA; return; }
   const b = document.createElement("div");
@@ -123,7 +123,10 @@ async function perguntar(texto) {
   if (typeof rotear !== "function") { adicionar("user", pergunta); adicionar("ngola", "⚠ Falta o ficheiro roteador.js no site. Carrega-o no GitHub (e confirma que o index.html é o mais recente)."); botao.disabled = false; return; }
   const r = rotear(pergunta), { intencao, confianca } = r;
   let resposta, div;
-  if (r.tipo === "areas") {
+  if (r.tipo === "calculo") {
+    resposta = r.texto;
+    div = adicionar("ngola", resposta, r.calculo.faltam ? "🧮 preciso de mais dados para calcular" : "🧮 calculado pela calculadora da Ngola (fórmulas, não palpites)");
+  } else if (r.tipo === "areas") {
     resposta = r.texto;
     div = adicionar("ngola", resposta, "📚 o que há na minha biblioteca");
   } else if (r.tipo === "semconteudo") {

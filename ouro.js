@@ -5,6 +5,9 @@ const P = (q, intencoes, cat = "Finanças pessoais") => ({ cat, q, esp: { tipo: 
 const L = (q, livro, locs, cat) => ({ cat, q, esp: { livro, locs } });
 const R = q => ({ cat: "Recusa (fora do assunto)", q, esp: { tipo: ["naopercebi"] } });
 const I = (q, termo) => ({ cat: "Índices de leis (só títulos)", q, esp: { indiceTermo: termo } });
+const K = (q, chave, valor, tol = 0.01) => ({ cat: "Cálculos (pensar com números)", q, esp: { calculo: { chave, valor, tol } } });
+const KF = q => ({ cat: "Cálculos (pensar com números)", q, esp: { calculoFaltam: true } });   // faltam dados: tem de PEDIR, não inventar
+const NK = q => ({ cat: "Cálculos (pensar com números)", q, esp: { naoCalculo: true } });        // definição sem números: não é um cálculo
 const AR = q => ({ cat: "Áreas do saber", q, esp: { tipo: ["areas"] } });
 const DA = (q, area) => ({ cat: "Áreas do saber", q, esp: { area } });   // sem conteúdo ainda, mas a Ngola sabe de que área é
 const S = q => ({ cat: "Sem conteúdo (não inventar)", q, esp: { naoConteudo: true } });
@@ -56,6 +59,24 @@ const OURO = [
   I("em que artigo do código de processo civil está a acareação?", "642"), I("o que é o arresto?", "Arresto"),
   I("o que é o agravo?", "Agravo"), I("como funciona o inventário?", "inventário"),
   I("que artigo trata das acções de honorários?", "76"),
+  // --- Cálculos: a Ngola calcula (valores de referência obtidos por simulação independente) ---
+  K("qual a prestação de um crédito de 5.000.000 Kz a 24 meses com juros de 2% ao mês?", "prestacao", 264355.486266),
+  K("prestação de um crédito de 100000 a 12 meses a 1% ao mês", "prestacao", 8884.878868),
+  K("quanto vou pagar por mês num empréstimo de 2.000.000 Kz a 36 meses com taxa de 25% ao ano?", "prestacao", 76923.217711),
+  K("quanto rende 1.000.000 Kz a 12% ao ano durante 3 anos?", "montante", 1404928),
+  K("se poupar 50.000 Kz por mês durante 24 meses a 10% ao ano, quanto junto?", "acumulado", 1316756.344288),
+  K("quanto devo poupar por mês para juntar 2.000.000 Kz em 18 meses a 8% ao ano?", "poupancaMensal", 105157.90997),
+  K("VPL de um projeto com investimento de 1.000.000 Kz e fluxos de 400.000, 500.000 e 600.000 a 10%", "vpl", 227648.384673),
+  K("TIR de um investimento de 1000 com fluxos de 300, 400 e 500", "tir", 0.088963, 1e-5),
+  K("converter 500 dólares para kwanzas ao câmbio de 900", "resultado", 450000),
+  K("calcula o IVA de 100.000 Kz", "iva", 14000),
+  K("taxa de esforço: prestação de 150.000 Kz e salário de 400.000 Kz", "taxaEsforco", 0.375, 1e-9),
+  K("ponto de equilíbrio com custos fixos de 500.000, preço de 2.500 e custo variável de 1.500", "quantidade", 500),
+  K("comprei a 800 e vendo a 1000, qual a margem?", "margem", 0.2, 1e-9),
+  K("com inflação de 15% ao ano, quanto custará daqui a 3 anos algo que hoje custa 100.000 Kz?", "futuro", 152087.5),
+  K("quanto tempo para dobrar o dinheiro a 12% ao ano?", "n", 6.116255, 1e-5),
+  KF("qual a prestação de um crédito de 5.000.000 Kz a 24 meses?"), KF("converter 500 dólares para kwanzas"),
+  NK("o que é o VPL?"), NK("como se calcula a prestação de um crédito?"),
   // --- Temas sem aula carregada: a Ngola NÃO pode fingir que sabe ---
   S("o que é um credito pessoal?"), S("qual a taxa maxima de juros permitida no mercado angolano?"),
   S("o que é uma taxa de esforço?"), S("quantos tipos de credito existe, quais as modalidades no nosso mercado?"),
@@ -65,6 +86,9 @@ const OURO = [
 
 function avaliarOuro(c, r) {
   const e = c.esp;
+  if (e.calculo) { const v = r.tipo === "calculo" && r.calculo.valores ? r.calculo.valores[e.calculo.chave] : null; return { ok: typeof v === "number" && Math.abs(v - e.calculo.valor) <= e.calculo.tol, obs: r.tipo + (typeof v === "number" ? " · " + v.toFixed(4) : (r.calculo && r.calculo.faltam ? " · pede dados" : "")) }; }
+  if (e.calculoFaltam) return { ok: r.tipo === "calculo" && !!r.calculo.faltam, obs: r.tipo + (r.calculo && r.calculo.faltam ? " · pede: " + r.calculo.faltam[0].slice(0, 30) : "") };
+  if (e.naoCalculo) return { ok: r.tipo !== "calculo", obs: r.tipo };
   if (e.indiceTermo) return { ok: r.tipo === "indice" && r.indice.some(a => a.t.toLowerCase().includes(e.indiceTermo.toLowerCase())), obs: r.tipo + (r.indice ? " · " + r.indice[0].t.slice(0, 45) : "") };
   if (e.area) return { ok: r.tipo === "semconteudo" && r.areas.some(a => a.id === e.area), obs: r.tipo + (r.areas ? " · " + r.areas.map(a => a.id).join("/") : "") };
   if (e.naoConteudo) return { ok: r.tipo !== "conteudo", obs: r.tipo };

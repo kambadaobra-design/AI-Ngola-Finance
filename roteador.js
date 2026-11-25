@@ -1,9 +1,12 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).roteador = 13;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).roteador = 14;
 // Decide COMO a Ngola responde. É usado pelo site (app.js) e pelo teste (teste.html): o mesmo código, os mesmos resultados.
 const LIMITE = 0.3;
 
 function rotear(pergunta) {
+  // 1) pensar com números: se é um cálculo, quem responde é a calculadora (nunca um palpite)
+  const calc = typeof Calc !== "undefined" ? Calc.calcular(pergunta) : null;
+  if (calc) return { tipo: "calculo", intencao: "calculo", confianca: 1, calculo: calc, texto: Calc.formatar(calc) };
   const { intencao, confianca } = ngola.prever(pergunta);
   const entendeu = intencao !== "outro" && confianca >= LIMITE;
   if (intencao === "areas" && entendeu) return { tipo: "areas", intencao, confianca, texto: biblioteca.resumoAreas() };

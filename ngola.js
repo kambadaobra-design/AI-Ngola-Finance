@@ -1,5 +1,5 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).ngola = 13;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).ngola = 14;
 const STOP = new Set(["qual","quais","de","do","da","dos","das","um","uma","em","no","na","para","por","com","que","eu","me","meu","minha","se","ao","como","quanto","quero","preciso","sao","posso","tenho","ele","ela"]);
 
 function reduzir(p) {                       // singular/plural: acções -> accao, variáveis -> variavel, gerais -> geral, bancos -> banco

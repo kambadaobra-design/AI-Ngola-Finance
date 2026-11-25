@@ -47,6 +47,8 @@ textarea{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(
 .fb button{background:none;border:1px solid var(--line);border-radius:8px;padding:2px 9px;cursor:pointer;font-size:14px;color:var(--text)}
 .fb button:hover{border-color:var(--accent)}
 .msg pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:var(--user);padding:12px;border-radius:10px;overflow-x:auto;white-space:pre;margin:10px 0;line-height:1.45}
+#linkCalc{display:block;margin-top:8px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;color:var(--text);text-decoration:none;font-size:15px;background:var(--card)}
+#linkCalc:hover{border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -55,6 +57,7 @@ textarea{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(
 <aside id="lateral">
   <div class="logo"><svg class="ico"><use href="#pensador"/></svg> Ngola<button id="fechar" aria-label="Fechar menu">✕</button></div>
   <button id="nova">＋ Nova conversa</button>
+  <a id="linkCalc" href="calculadoras.html">🧮 Calculadoras</a>
   <div class="titulo">Conversas</div>
   <div id="lista"></div>
 </aside>
@@ -86,11 +89,12 @@ textarea{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="dados.js?v=13"></script>
-<script src="ngola.js?v=13"></script>
-<script src="areas.js?v=13"></script>
-<script src="biblioteca.js?v=13"></script>
-<script src="roteador.js?v=13.1"></script>
-<script src="app.js?v=13.1"></script>
+<script src="dados.js?v=14"></script>
+<script src="ngola.js?v=14"></script>
+<script src="calculos.js?v=14"></script>
+<script src="areas.js?v=14"></script>
+<script src="biblioteca.js?v=14"></script>
+<script src="roteador.js?v=14"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>

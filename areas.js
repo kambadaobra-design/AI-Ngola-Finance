@@ -1,5 +1,5 @@
 // NGOLA_V
-(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).areas = 13;
+(globalThis.NGOLA_V = globalThis.NGOLA_V || {}).areas = 14;
 
 // CATÁLOGO DE ÁREAS DO SABER DA NGOLA
 // - id: é o nome da "área" usada nos ficheiros livros/<id>.json (o mesmo id serve para vários livros e países)
